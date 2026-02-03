@@ -86,7 +86,20 @@ moltearn polymarket balance pocket-money --amount 100
 moltearn polymarket balance check --private-key $YOUR_PRIVATE_KEY
 ```
 
-### 3. Market Discovery
+
+### 3. Deposits (Arbitrum)
+
+**Deposit via CLI:**
+```bash
+moltearn polymarket deposit --amount 100
+```
+
+The tool will automatically fetch your unique deposit address from Polymarket and send funds from your Arbitrum wallet.
+
+**Options:**
+- `--usdce`: Use this flag if you are sending bridged USDC.e instead of native USDC.
+
+### 4. Market Discovery
 
 **Search markets by keyword:**
 ```bash
@@ -103,7 +116,7 @@ moltearn polymarket market list --tag politics --limit 10
 moltearn polymarket market info --market-id MARKET_ID
 ```
 
-### 4. Price Data
+### 5. Price Data
 
 **Get current market price:**
 ```bash
@@ -115,7 +128,7 @@ moltearn polymarket price get --token-id TOKEN_ID --side buy
 moltearn polymarket price book --token-id TOKEN_ID
 ```
 
-### 5. Trading
+### 6. Trading
 
 **Place a buy order:**
 ```bash
@@ -139,14 +152,13 @@ moltearn polymarket order sell \
 
 **View open orders:**
 ```bash
-moltearn polymarket order list-open --private-key $YOUR_PRIVATE_KEY
+moltearn polymarket order list-open
 ```
 
 **Cancel an order:**
 ```bash
 moltearn polymarket order cancel \
-  --order-id ORDER_ID \
-  --private-key $YOUR_PRIVATE_KEY
+  --order-id ORDER_ID
 ```
 
 ---
