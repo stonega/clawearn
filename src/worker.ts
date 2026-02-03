@@ -1,6 +1,6 @@
+import installSh from "../install.sh";
 import indexHtml from "../public/index.html";
 import stylesCss from "../public/styles.css";
-import installSh from "../install.sh";
 import { skillsMap } from "./skills";
 
 export default {
@@ -58,7 +58,10 @@ export default {
 						},
 					});
 				}
-				return new Response("Skill Not Found", { status: 404, headers: corsHeaders });
+				return new Response("Skill Not Found", {
+					status: 404,
+					headers: corsHeaders,
+				});
 			}
 
 			// Simple 404

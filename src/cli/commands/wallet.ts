@@ -49,6 +49,7 @@ export async function runWallet(args: string[]) {
 
 async function createWallet(args: string[]) {
 	const force = args.includes("--force");
+	const privateKeyArg = getArg(args, "--private-key");
 
 	// Check if wallet already exists
 	if (fs.existsSync(WALLET_FILE) && !force) {
@@ -65,8 +66,19 @@ async function createWallet(args: string[]) {
 		fs.mkdirSync(WALLET_DIR, { recursive: true, mode: 0o700 });
 	}
 
-	// Generate new wallet
-	const wallet = Wallet.createRandom();
+	let wallet: Wallet;
+
+	if (privateKeyArg) {
+		try {
+			wallet = new Wallet(privateKeyArg);
+		} catch (_error) {
+			console.error("❌ Invalid private key provided");
+			process.exit(1);
+		}
+	} else {
+		// Generate new wallet
+		wallet = Wallet.createRandom();
+	}
 
 	const config: WalletConfig = {
 		address: wallet.address,
@@ -79,7 +91,12 @@ async function createWallet(args: string[]) {
 		mode: 0o600,
 	});
 
-	console.log("✅ Wallet created successfully!\n");
+	if (privateKeyArg) {
+		console.log("✅ Wallet imported successfully!\n");
+	} else {
+		console.log("✅ Wallet created successfully!\n");
+	}
+
 	console.log(
 		"═══════════════════════════════════════════════════════════════",
 	);
@@ -93,15 +110,20 @@ async function createWallet(args: string[]) {
 	console.log(
 		"═══════════════════════════════════════════════════════════════",
 	);
-	console.log("\n📤 To fund this wallet:");
-	console.log("   1. Send USDC to the address above on Arbitrum network");
-	console.log("   2. You'll need a small amount of ETH for gas fees");
-	console.log("\n🔗 Bridge to Arbitrum: https://bridge.arbitrum.io/");
-	console.log("🛒 Buy crypto: https://www.moonpay.com/ or use an exchange");
+
+	if (!privateKeyArg) {
+		// Only show funding instructions for new empty wallets
+		console.log("\n📤 To fund this wallet:");
+		console.log("   1. Send USDC to the address above on Arbitrum network");
+		console.log("   2. You'll need a small amount of ETH for gas fees");
+		console.log("\n🔗 Bridge to Arbitrum: https://bridge.arbitrum.io/");
+		console.log("🛒 Buy crypto: https://www.moonpay.com/ or use an exchange");
+	}
+
 	console.log("\n⚠️  IMPORTANT: Your private key is stored at:");
 	console.log(`   ${WALLET_FILE}`);
 	console.log("   Keep this file secure and NEVER share it with anyone!");
-	console.log("\n💡 Once funded, you can start trading with:");
+	console.log("\n💡 Start trading with:");
 	console.log('   clawearn polymarket market search --query "bitcoin"');
 }
 
@@ -216,4 +238,9 @@ SECURITY:
   • Keep backups of your wallet file
   • This wallet requires USDC on Arbitrum to trade
 `);
+}
+
+function getArg(args: string[], name: string): string | undefined {
+	const index = args.indexOf(name);
+	return index !== -1 && index + 1 < args.length ? args[index + 1] : undefined;
 }

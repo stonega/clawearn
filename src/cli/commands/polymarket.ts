@@ -1,10 +1,9 @@
 import { ClobClient } from "@polymarket/clob-client";
 import { ethers, Wallet } from "ethers";
-import { getStoredPrivateKey } from "./wallet";
+import { getStoredAddress, getStoredPrivateKey } from "./wallet";
 
 const HOST = "https://clob.polymarket.com";
 const GAMMA_API = "https://gamma-api.polymarket.com";
-const _DATA_API = "https://data-api.polymarket.com";
 const CHAIN_ID = 137; // Polygon mainnet
 const ARBITRUM_RPC = "https://arb1.arbitrum.io/rpc";
 const ARB_USDC_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // Native USDC
@@ -16,7 +15,6 @@ const ARB_USDCE_ADDRESS = "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"; // Bridg
  */
 export async function runPolymarket(args: string[]) {
 	const command = args[0];
-	const _subcommand = args[1];
 
 	if (!command) {
 		showPolymarketHelp();
@@ -76,9 +74,9 @@ function requirePrivateKey(args: string[], command: string): string {
 	if (!key) {
 		console.error(`❌ No wallet found!`);
 		console.log(`\nTo use this command, either:`);
-		console.log(`  1. Create a wallet: clawearn wallet create`);
+		console.log(`  1. Create a clawearn wallet: clawearn wallet create`);
 		console.log(`  2. Or provide: --private-key <key>\n`);
-		console.log(`Example: clawearn ${command} --private-key 0x...`);
+		console.log(`Example: clawearn polymarket ${command} --private-key 0x...`);
 		process.exit(1);
 	}
 	return key;
@@ -87,46 +85,37 @@ function requirePrivateKey(args: string[], command: string): string {
 async function handleAccount(args: string[]) {
 	const subcommand = args[1];
 
+	if (!subcommand) {
+		// Show account info
+		const address = getStoredAddress();
+		if (address) {
+			console.log(`Wallet Address: ${address}`);
+			console.log("Use 'clawearn wallet show' for more details.");
+		} else {
+			console.error("❌ No wallet found!");
+			console.log("Create one with: clawearn wallet create");
+		}
+		return;
+	}
+
 	if (subcommand === "create") {
-		const email = getArg(args, "--email");
-		const password = getArg(args, "--password");
-
-		if (!email || !password) {
-			console.error(
-				"Usage: clawearn polymarket account create --email <email> --password <password>",
-			);
-			process.exit(1);
-		}
-
-		// Generate new wallet
-		const wallet = Wallet.createRandom();
-		console.log("Account created successfully!");
-		console.log(`Address: ${wallet.address}`);
-		console.log(`Private Key: ${wallet.privateKey}`);
+		console.error("deprecated: Use 'clawearn wallet create' instead.");
 		console.log(
-			"\n⚠️  SAVE YOUR PRIVATE KEY SECURELY - You cannot recover it if lost!",
+			"To import a private key: clawearn wallet create --private-key <key>",
 		);
-		console.log(
-			"Store this in an environment variable or secure key management system.",
-		);
+		process.exit(1);
 	} else if (subcommand === "export-key") {
-		const email = getArg(args, "--email");
-		const password = getArg(args, "--password");
-		const privateKey = getArg(args, "--private-key");
-
-		if (!privateKey && (!email || !password)) {
-			console.error(
-				"Usage: clawearn polymarket account export-key --private-key <key> OR --email <email> --password <password>",
-			);
+		console.error("deprecated: Use 'clawearn wallet export' instead.");
+		process.exit(1);
+	} else if (subcommand === "info") {
+		const address = getStoredAddress();
+		if (!address) {
+			console.error("❌ No wallet found!");
 			process.exit(1);
 		}
-
-		console.log("Private Key: ", privateKey || "Set via --private-key flag");
-		console.log(
-			"⚠️  NEVER share your private key. Use it only with trusted services.",
-		);
+		console.log(`Wallet Address: ${address}`);
 	} else {
-		console.error("Usage: clawearn polymarket account [create|export-key]");
+		console.error("Usage: clawearn polymarket account [info]");
 		process.exit(1);
 	}
 }
@@ -202,12 +191,36 @@ async function handleMarket(args: string[]) {
 		try {
 			// Search via Gamma API
 			const response = await fetch(
-				`${GAMMA_API}/search?q=${encodeURIComponent(query)}&limit=10`,
+				`${GAMMA_API}/public-search?q=${encodeURIComponent(query)}&limit_per_type=10`,
 			);
-			const results = await response.json();
+			// biome-ignore lint/suspicious/noExplicitAny: API response structure
+			const results = (await response.json()) as any;
+
+			if (!results || (!results.events && !results.tags && !results.profiles)) {
+				console.log(`No results found for "${query}"`);
+				return;
+			}
 
 			console.log(`Search results for "${query}":`);
-			console.log(JSON.stringify(results, null, 2));
+
+			if (results.events && results.events.length > 0) {
+				console.log("\nEvents:");
+				// biome-ignore lint/suspicious/noExplicitAny: API response type
+				results.events.forEach((event: any) => {
+					console.log(`- ${event.title} (ID: ${event.id})`);
+				});
+			}
+
+			if (results.tags && results.tags.length > 0) {
+				console.log("\nTags:");
+				// biome-ignore lint/suspicious/noExplicitAny: API response type
+				results.tags.forEach((tag: any) => {
+					console.log(`- ${tag.label} (ID: ${tag.id})`);
+				});
+			}
+
+			// Full debug output if needed
+			// console.log(JSON.stringify(results, null, 2));
 		} catch (error) {
 			console.error(
 				"Market search failed:",
@@ -243,8 +256,8 @@ async function handleMarket(args: string[]) {
 		}
 
 		try {
-			const response = await fetch(`${GAMMA_API}/markets/${marketId}`);
-			const market = await response.json();
+			const client = new ClobClient(HOST, CHAIN_ID);
+			const market = await client.getMarket(marketId);
 
 			console.log("Market details:");
 			console.log(JSON.stringify(market, null, 2));
@@ -264,55 +277,45 @@ async function handleMarket(args: string[]) {
 async function handlePrice(args: string[]) {
 	const subcommand = args[1];
 
-	if (subcommand === "get") {
-		const tokenId = getArg(args, "--token-id");
-		const side = getArg(args, "--side") || "buy";
+	try {
+		const client = new ClobClient(HOST, CHAIN_ID);
 
-		if (!tokenId) {
-			console.error(
-				"Usage: clawearn polymarket price get --token-id <id> [--side buy|sell]",
-			);
-			process.exit(1);
-		}
+		if (subcommand === "get") {
+			const tokenId = getArg(args, "--token-id");
+			const side = getArg(args, "--side") || "buy";
 
-		try {
-			const response = await fetch(
-				`${HOST}/price?token_id=${tokenId}&side=${side}`,
-			);
-			const price = await response.json();
+			if (!tokenId) {
+				console.error(
+					"Usage: clawearn polymarket price get --token-id <id> [--side buy|sell]",
+				);
+				process.exit(1);
+			}
+
+			const price = await client.getPrice(tokenId, side);
 
 			console.log(`Current price for token ${tokenId}:`);
 			console.log(JSON.stringify(price, null, 2));
-		} catch (error) {
-			console.error(
-				"Failed to fetch price:",
-				error instanceof Error ? error.message : error,
-			);
-			process.exit(1);
-		}
-	} else if (subcommand === "book") {
-		const tokenId = getArg(args, "--token-id");
+		} else if (subcommand === "book") {
+			const tokenId = getArg(args, "--token-id");
 
-		if (!tokenId) {
-			console.error("Usage: clawearn polymarket price book --token-id <id>");
-			process.exit(1);
-		}
+			if (!tokenId) {
+				console.error("Usage: clawearn polymarket price book --token-id <id>");
+				process.exit(1);
+			}
 
-		try {
-			const response = await fetch(`${HOST}/book?token_id=${tokenId}`);
-			const orderbook = await response.json();
+			const orderbook = await client.getOrderBook(tokenId);
 
 			console.log(`Order book for token ${tokenId}:`);
 			console.log(JSON.stringify(orderbook, null, 2));
-		} catch (error) {
-			console.error(
-				"Failed to fetch order book:",
-				error instanceof Error ? error.message : error,
-			);
+		} else {
+			console.error("Usage: clawearn polymarket price [get|book]");
 			process.exit(1);
 		}
-	} else {
-		console.error("Usage: clawearn polymarket price [get|book]");
+	} catch (error) {
+		console.error(
+			"Failed to fetch price data:",
+			error instanceof Error ? error.message : error,
+		);
 		process.exit(1);
 	}
 }
