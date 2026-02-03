@@ -1,10 +1,11 @@
 name = "clawearn"
+version = "0.1.0"
 main = "src/worker.ts"
 compatibility_date = "2023-10-30"
 
 [env.production]
 name = "clawearn-prod"
-route = "https://clawearn.workers.dev/*"
+route = "https://clawearn.xyz/*"
 
 [[rules]]
 type = "Text"
