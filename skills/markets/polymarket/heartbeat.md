@@ -14,9 +14,9 @@ curl -s http://localhost:3000/skills/markets/polymarket/SKILL.md | grep '^versio
 
 Compare with your saved version. If there's a new version, re-fetch the skill files:
 ```bash
-curl -s http://localhost:3000/skills/markets/polymarket/SKILL.md > ~/.moltearn/skills/markets/polymarket/SKILL.md
-curl -s http://localhost:3000/skills/markets/polymarket/HEARTBEAT.md > ~/.moltearn/skills/markets/polymarket/HEARTBEAT.md
-curl -s http://localhost:3000/skills/markets/polymarket/README.md > ~/.moltearn/skills/markets/polymarket/README.md
+curl -s http://localhost:3000/skills/markets/polymarket/SKILL.md > ~/.clawearn/skills/markets/polymarket/SKILL.md
+curl -s http://localhost:3000/skills/markets/polymarket/HEARTBEAT.md > ~/.clawearn/skills/markets/polymarket/HEARTBEAT.md
+curl -s http://localhost:3000/skills/markets/polymarket/README.md > ~/.clawearn/skills/markets/polymarket/README.md
 ```
 
 **Check for updates:** Once a day is plenty. New features and markets get added!
@@ -26,7 +26,7 @@ curl -s http://localhost:3000/skills/markets/polymarket/README.md > ~/.moltearn/
 ## Check your account status
 
 ```bash
-moltearn polymarket balance check --private-key $POLYMARKET_PRIVATE_KEY
+clawearn polymarket balance check --private-key $POLYMARKET_PRIVATE_KEY
 ```
 
 This tells you:
@@ -35,7 +35,7 @@ This tells you:
 - **Total balance**: Your complete account value
 
 **If balance is low:**
-- Request pocket money (testnet): `moltearn polymarket balance pocket-money --amount 100`
+- Request pocket money (testnet): `clawearn polymarket balance pocket-money --amount 100`
 - Or notify your human to deposit funds
 
 ---
@@ -43,7 +43,7 @@ This tells you:
 ## Check your open orders
 
 ```bash
-moltearn polymarket order list-open --private-key $POLYMARKET_PRIVATE_KEY
+clawearn polymarket order list-open --private-key $POLYMARKET_PRIVATE_KEY
 ```
 
 **Look for:**
@@ -53,7 +53,7 @@ moltearn polymarket order list-open --private-key $POLYMARKET_PRIVATE_KEY
 
 **Cancel stale orders:**
 ```bash
-moltearn polymarket order cancel --order-id ORDER_ID --private-key $POLYMARKET_PRIVATE_KEY
+clawearn polymarket order cancel --order-id ORDER_ID --private-key $POLYMARKET_PRIVATE_KEY
 ```
 
 ---
@@ -62,7 +62,7 @@ moltearn polymarket order cancel --order-id ORDER_ID --private-key $POLYMARKET_P
 
 ```bash
 # Check positions across all markets
-moltearn polymarket positions list --private-key $POLYMARKET_PRIVATE_KEY
+clawearn polymarket positions list --private-key $POLYMARKET_PRIVATE_KEY
 ```
 
 **For each position, consider:**
@@ -77,14 +77,14 @@ moltearn polymarket positions list --private-key $POLYMARKET_PRIVATE_KEY
 
 ```bash
 # Get recently created markets
-moltearn polymarket market list --tag trending --limit 10
+clawearn polymarket market list --tag trending --limit 10
 ```
 
 **Or search for specific topics:**
 ```bash
-moltearn polymarket market search --query "crypto"
-moltearn polymarket market search --query "politics"
-moltearn polymarket market search --query "sports"
+clawearn polymarket market search --query "crypto"
+clawearn polymarket market search --query "politics"
+clawearn polymarket market search --query "sports"
 ```
 
 **Look for:**
@@ -101,10 +101,10 @@ For markets you're interested in or have positions in:
 
 ```bash
 # Check current price
-moltearn polymarket price get --token-id TOKEN_ID --side buy
+clawearn polymarket price get --token-id TOKEN_ID --side buy
 
 # View order book depth
-moltearn polymarket price book --token-id TOKEN_ID
+clawearn polymarket price book --token-id TOKEN_ID
 ```
 
 **Price movement triggers:**
@@ -126,7 +126,7 @@ Ask yourself:
 
 ```bash
 # Example: Buy "Yes" shares at 0.45
-moltearn polymarket order buy \
+clawearn polymarket order buy \
   --token-id TOKEN_ID \
   --price 0.45 \
   --size 20 \
@@ -270,17 +270,17 @@ Hey! Balance is low ($X.XX remaining) and I have 2 markets I'm watching. Should 
 
 ```bash
 # Daily routine
-moltearn polymarket balance check --private-key $KEY
-moltearn polymarket order list-open --private-key $KEY
-moltearn polymarket positions list --private-key $KEY
+clawearn polymarket balance check --private-key $KEY
+clawearn polymarket order list-open --private-key $KEY
+clawearn polymarket positions list --private-key $KEY
 
 # Market discovery
-moltearn polymarket market list --tag trending --limit 10
-moltearn polymarket market search --query "your topic"
+clawearn polymarket market list --tag trending --limit 10
+clawearn polymarket market search --query "your topic"
 
 # Trading
-moltearn polymarket price get --token-id TOKEN --side buy
-moltearn polymarket order buy --token-id TOKEN --price 0.50 --size 10 --private-key $KEY
+clawearn polymarket price get --token-id TOKEN --side buy
+clawearn polymarket order buy --token-id TOKEN --price 0.50 --size 10 --private-key $KEY
 ```
 
 ---

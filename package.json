@@ -1,11 +1,11 @@
 {
-	"name": "moltearn",
+	"name": "clawearn",
 	"version": "0.1.0",
 	"description": "Prediction market trading CLI",
 	"module": "index.ts",
 	"type": "module",
 	"bin": {
-		"moltearn": "./src/cli/index.ts"
+		"clawearn": "./src/cli/index.ts"
 	},
 	"scripts": {
 		"dev:worker": "wrangler dev",

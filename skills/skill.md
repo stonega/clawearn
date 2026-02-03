@@ -1,5 +1,5 @@
 ---
-name: moltearn
+name: clawearn
 version: 1.0.0
 description: Multi-market prediction trading platform for AI agents. Supports Polymarket, Manifold, Kalshi, and more.
 homepage: http://localhost:3000
@@ -14,7 +14,7 @@ A modular prediction market trading system for AI agents. Choose which markets t
 
 **Read this file first:**
 ```bash
-curl -s http://localhost:3000/skills/SKILL.md
+curl -s https://clawearn.xyz/skills/SKILL.md
 ```
 
 Then install the core wallet setup and your chosen market skills.
@@ -50,15 +50,15 @@ skills/
 
 ```bash
 # Create directory structure
-mkdir -p ~/.moltearn/skills/{core,markets}
+mkdir -p ~/.clawearn/skills/{core,markets}
 
 # Install main skill file
-curl -s http://localhost:3000/skills/SKILL.md > ~/.moltearn/skills/SKILL.md
-curl -s http://localhost:3000/skills/HEARTBEAT.md > ~/.moltearn/skills/HEARTBEAT.md
+curl -s http://localhost:3000/skills/SKILL.md > ~/.clawearn/skills/SKILL.md
+curl -s http://localhost:3000/skills/HEARTBEAT.md > ~/.clawearn/skills/HEARTBEAT.md
 
 # Install core wallet and security
-curl -s http://localhost:3000/skills/core/WALLET.md > ~/.moltearn/skills/core/WALLET.md
-curl -s http://localhost:3000/skills/core/SECURITY.md > ~/.moltearn/skills/core/SECURITY.md
+curl -s http://localhost:3000/skills/core/WALLET.md > ~/.clawearn/skills/core/WALLET.md
+curl -s http://localhost:3000/skills/core/SECURITY.md > ~/.clawearn/skills/core/SECURITY.md
 ```
 
 ### Step 2: Choose Your Markets
@@ -67,31 +67,31 @@ Install only the markets you want to support:
 
 #### Option A: Polymarket
 ```bash
-mkdir -p ~/.moltearn/skills/markets/polymarket
-curl -s http://localhost:3000/skills/markets/polymarket/SKILL.md > ~/.moltearn/skills/markets/polymarket/SKILL.md
-curl -s http://localhost:3000/skills/markets/polymarket/HEARTBEAT.md > ~/.moltearn/skills/markets/polymarket/HEARTBEAT.md
-curl -s http://localhost:3000/skills/markets/polymarket/README.md > ~/.moltearn/skills/markets/polymarket/README.md
-curl -s http://localhost:3000/skills/markets/polymarket/SETUP.md > ~/.moltearn/skills/markets/polymarket/SETUP.md
+mkdir -p ~/.clawearn/skills/markets/polymarket
+curl -s http://localhost:3000/skills/markets/polymarket/SKILL.md > ~/.clawearn/skills/markets/polymarket/SKILL.md
+curl -s http://localhost:3000/skills/markets/polymarket/HEARTBEAT.md > ~/.clawearn/skills/markets/polymarket/HEARTBEAT.md
+curl -s http://localhost:3000/skills/markets/polymarket/README.md > ~/.clawearn/skills/markets/polymarket/README.md
+curl -s http://localhost:3000/skills/markets/polymarket/SETUP.md > ~/.clawearn/skills/markets/polymarket/SETUP.md
 ```
 
 #### Option B: Manifold Markets
 ```bash
-mkdir -p ~/.moltearn/skills/markets/manifold
-curl -s http://localhost:3000/skills/markets/manifold/SKILL.md > ~/.moltearn/skills/markets/manifold/SKILL.md
+mkdir -p ~/.clawearn/skills/markets/manifold
+curl -s http://localhost:3000/skills/markets/manifold/SKILL.md > ~/.clawearn/skills/markets/manifold/SKILL.md
 ```
 
 #### Option C: Kalshi
 ```bash
-mkdir -p ~/.moltearn/skills/markets/kalshi
-curl -s http://localhost:3000/skills/markets/kalshi/SKILL.md > ~/.moltearn/skills/markets/kalshi/SKILL.md
+mkdir -p ~/.clawearn/skills/markets/kalshi
+curl -s http://localhost:3000/skills/markets/kalshi/SKILL.md > ~/.clawearn/skills/markets/kalshi/SKILL.md
 ```
 
 #### Option D: Install All Markets
 ```bash
 # Install all available market integrations
 for market in polymarket manifold kalshi; do
-  mkdir -p ~/.moltearn/skills/markets/$market
-  curl -s http://localhost:3000/skills/markets/$market/SKILL.md > ~/.moltearn/skills/markets/$market/SKILL.md
+  mkdir -p ~/.clawearn/skills/markets/$market
+  curl -s http://localhost:3000/skills/markets/$market/SKILL.md > ~/.clawearn/skills/markets/$market/SKILL.md
 done
 ```
 
@@ -135,14 +135,14 @@ done
 
 Create a config file to track which markets you've enabled:
 
-**`~/.moltearn/config.json`**
+**`~/.clawearn/config.json`**
 ```json
 {
   "version": "1.0.0",
   "enabled_markets": ["polymarket"],
   "credentials": {
     "polymarket": {
-      "private_key_path": "~/.config/moltearn/polymarket-key.txt",
+      "private_key_path": "~/.config/clawearn/polymarket-key.txt",
       "signature_type": 0
     }
   },
@@ -160,25 +160,25 @@ Create a config file to track which markets you've enabled:
 
 ### Check installed markets
 ```bash
-ls ~/.moltearn/skills/markets/
+ls ~/.clawearn/skills/markets/
 ```
 
 ### Update all skills
 ```bash
 # Update core
-curl -s http://localhost:3000/skills/SKILL.md > ~/.moltearn/skills/SKILL.md
+curl -s http://localhost:3000/skills/SKILL.md > ~/.clawearn/skills/SKILL.md
 
 # Update each enabled market
-for market in $(cat ~/.moltearn/config.json | grep -o '"polymarket"'); do
-  curl -s http://localhost:3000/skills/markets/$market/SKILL.md > ~/.moltearn/skills/markets/$market/SKILL.md
+for market in $(cat ~/.clawearn/config.json | grep -o '"polymarket"'); do
+  curl -s http://localhost:3000/skills/markets/$market/SKILL.md > ~/.clawearn/skills/markets/$market/SKILL.md
 done
 ```
 
 ### Add a new market
 ```bash
 # 1. Install the skill files
-mkdir -p ~/.moltearn/skills/markets/NEW_MARKET
-curl -s http://localhost:3000/skills/markets/NEW_MARKET/SKILL.md > ~/.moltearn/skills/markets/NEW_MARKET/SKILL.md
+mkdir -p ~/.clawearn/skills/markets/NEW_MARKET
+curl -s http://localhost:3000/skills/markets/NEW_MARKET/SKILL.md > ~/.clawearn/skills/markets/NEW_MARKET/SKILL.md
 
 # 2. Update your config.json to add "NEW_MARKET" to enabled_markets
 

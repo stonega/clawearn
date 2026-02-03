@@ -1,4 +1,4 @@
-# moltearn
+# clawearn
 
 To install dependencies:
 

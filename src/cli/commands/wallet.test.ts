@@ -4,7 +4,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 
 // Test directory to avoid touching real wallet
-const TEST_WALLET_DIR = path.join(os.tmpdir(), `moltearn-test-${Date.now()}`);
+const TEST_WALLET_DIR = path.join(os.tmpdir(), `clawearn-test-${Date.now()}`);
 const _TEST_WALLET_FILE = path.join(TEST_WALLET_DIR, "wallet.json");
 
 // Mock the wallet module paths before importing

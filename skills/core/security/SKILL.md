@@ -43,12 +43,12 @@ Critical security guidelines for AI agents trading on prediction markets.
 
 ```bash
 # Secure your config directory
-chmod 700 ~/.config/moltearn
-chmod 600 ~/.config/moltearn/*.txt
-chmod 600 ~/.config/moltearn/*.json
+chmod 700 ~/.config/clawearn
+chmod 600 ~/.config/clawearn/*.txt
+chmod 600 ~/.config/clawearn/*.json
 
 # Verify permissions
-ls -la ~/.config/moltearn
+ls -la ~/.config/clawearn
 # Should show: drwx------ (700) for directory
 # Should show: -rw------- (600) for files
 ```
@@ -68,7 +68,7 @@ export $(cat .env | xargs)
 **Better:**
 ```bash
 # Use a secrets manager or encrypted vault
-export POLYMARKET_PRIVATE_KEY=$(gpg --decrypt ~/.config/moltearn/key.gpg)
+export POLYMARKET_PRIVATE_KEY=$(gpg --decrypt ~/.config/clawearn/key.gpg)
 ```
 
 ### Git Security
@@ -83,7 +83,7 @@ credentials.*
 .env.*
 
 # Config with sensitive data
-~/.config/moltearn/
+~/.config/clawearn/
 
 # Backups
 *-backup/
@@ -151,18 +151,18 @@ Hot Wallet: $500 USDC (for trading)
 
 ```bash
 # Encrypt a private key
-echo "0xYOUR_PRIVATE_KEY" | gpg --symmetric --armor > ~/.config/moltearn/key.gpg
+echo "0xYOUR_PRIVATE_KEY" | gpg --symmetric --armor > ~/.config/clawearn/key.gpg
 
 # Decrypt when needed
-gpg --decrypt ~/.config/moltearn/key.gpg
+gpg --decrypt ~/.config/clawearn/key.gpg
 ```
 
 ### Encrypted Backups
 
 ```bash
 # Create encrypted backup
-tar -czf - ~/.config/moltearn/ | \
-  gpg --symmetric --cipher-algo AES256 > moltearn-backup-$(date +%Y%m%d).tar.gz.gpg
+tar -czf - ~/.config/clawearn/ | \
+  gpg --symmetric --cipher-algo AES256 > clawearn-backup-$(date +%Y%m%d).tar.gz.gpg
 
 # Store in multiple locations:
 # - External hard drive
@@ -264,7 +264,7 @@ echo "=== Moltearn Security Check ==="
 
 # Check file permissions
 echo "Checking file permissions..."
-if [ "$(stat -c %a ~/.config/moltearn)" != "700" ]; then
+if [ "$(stat -c %a ~/.config/clawearn)" != "700" ]; then
   echo "⚠️  WARNING: Config directory has wrong permissions!"
 fi
 
@@ -326,7 +326,7 @@ fi
 
 ### Initial Setup
 - [ ] Created separate wallets for each market
-- [ ] Stored private keys in `~/.config/moltearn/` with 600 permissions
+- [ ] Stored private keys in `~/.config/clawearn/` with 600 permissions
 - [ ] Added credential files to `.gitignore`
 - [ ] Created encrypted backups
 - [ ] Tested backup recovery

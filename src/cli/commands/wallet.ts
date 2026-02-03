@@ -3,7 +3,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { Wallet } from "ethers";
 
-const WALLET_DIR = path.join(os.homedir(), ".config", "moltearn");
+const WALLET_DIR = path.join(os.homedir(), ".config", "clawearn");
 const WALLET_FILE = path.join(WALLET_DIR, "wallet.json");
 
 interface WalletConfig {
@@ -102,7 +102,7 @@ async function createWallet(args: string[]) {
 	console.log(`   ${WALLET_FILE}`);
 	console.log("   Keep this file secure and NEVER share it with anyone!");
 	console.log("\n💡 Once funded, you can start trading with:");
-	console.log('   moltearn polymarket market search --query "bitcoin"');
+	console.log('   clawearn polymarket market search --query "bitcoin"');
 }
 
 async function showAddress() {
@@ -110,7 +110,7 @@ async function showAddress() {
 
 	if (!wallet) {
 		console.error("❌ No wallet found. Create one first:");
-		console.log("   moltearn wallet create");
+		console.log("   clawearn wallet create");
 		process.exit(1);
 	}
 
@@ -139,7 +139,7 @@ async function exportKey(args: string[]) {
 		console.error("⚠️  WARNING: This will display your private key!");
 		console.log("   Private keys give FULL CONTROL of your wallet.");
 		console.log("   Never share this with anyone or paste it into websites.");
-		console.log("\n   To confirm, run: moltearn wallet export --confirm");
+		console.log("\n   To confirm, run: clawearn wallet export --confirm");
 		process.exit(1);
 	}
 
@@ -147,7 +147,7 @@ async function exportKey(args: string[]) {
 
 	if (!wallet) {
 		console.error("❌ No wallet found. Create one first:");
-		console.log("   moltearn wallet create");
+		console.log("   clawearn wallet create");
 		process.exit(1);
 	}
 
@@ -189,7 +189,7 @@ function showWalletHelp() {
 	console.log(`
 Wallet Management Commands
 
-Usage: moltearn wallet <command> [options]
+Usage: clawearn wallet <command> [options]
 
 COMMANDS:
   create          Create a new wallet on this device
@@ -202,13 +202,13 @@ COMMANDS:
 
 EXAMPLES:
   # Create a new wallet
-  moltearn wallet create
+  clawearn wallet create
 
   # Show your wallet address (for receiving funds)
-  moltearn wallet show
+  clawearn wallet show
 
   # Export private key (use with caution!)
-  moltearn wallet export --confirm
+  clawearn wallet export --confirm
 
 SECURITY:
   • Your private key is stored at: ${WALLET_FILE}

@@ -2,12 +2,12 @@
 set -euo pipefail
 
 # ╔══════════════════════════════════════════════════════════════════════════╗
-# ║                         Moltearn CLI Installer                           ║
+# ║                         Clawearn CLI Installer                           ║
 # ╚══════════════════════════════════════════════════════════════════════════╝
 
-REPO_URL="https://github.com/stonega/moltearn.git"
-INSTALL_DIR="${MOLTEARN_INSTALL_DIR:-$HOME/.moltearn}"
-BIN_DIR="${MOLTEARN_BIN_DIR:-$HOME/.local/bin}"
+REPO_URL="https://github.com/stonega/clawearn.git"
+INSTALL_DIR="${CLAWEARN_INSTALL_DIR:-$HOME/.clawearn}"
+BIN_DIR="${CLAWEARN_BIN_DIR:-$HOME/.local/bin}"
 
 # Colors
 RED='\033[0;31m'
@@ -137,7 +137,7 @@ setup_repo() {
     step "Setting up Moltearn CLI..."
     
     if [ -d "$INSTALL_DIR" ]; then
-        info "Existing moltearn installation found at $INSTALL_DIR. Updating..."
+        info "Existing clawearn installation found at $INSTALL_DIR. Updating..."
         cd "$INSTALL_DIR"
         if [ -d ".git" ]; then
             git pull --quiet origin main 2>/dev/null || warn "Could not update from git"
@@ -175,7 +175,7 @@ create_symlink() {
     mkdir -p "$BIN_DIR"
     
     # Create wrapper script
-    local wrapper="$BIN_DIR/moltearn"
+    local wrapper="$BIN_DIR/clawearn"
     
     cat > "$wrapper" << EOF
 #!/usr/bin/env bash
@@ -207,7 +207,7 @@ update_path() {
     local bun_path='export PATH="$BUN_INSTALL/bin:$PATH"'
     
     if [ -n "$shell_config" ]; then
-        # Add moltearn to PATH if not already present
+        # Add clawearn to PATH if not already present
         if ! grep -q "$BIN_DIR" "$shell_config" 2>/dev/null; then
             echo "" >> "$shell_config"
             echo "# Moltearn CLI" >> "$shell_config"
@@ -247,21 +247,21 @@ print_success() {
     echo -e "       ${YELLOW}source ~/.bashrc${NC}  or  ${YELLOW}source ~/.zshrc${NC}"
     echo ""
     echo -e "    ${CYAN}2.${NC} Initialize your wallet:"
-    echo -e "       ${YELLOW}moltearn wallet create${NC}"
+    echo -e "       ${YELLOW}clawearn wallet create${NC}"
     echo ""
     echo -e "    ${CYAN}3.${NC} Check wallet balance:"
-    echo -e "       ${YELLOW}moltearn wallet balance${NC}"
+    echo -e "       ${YELLOW}clawearn wallet balance${NC}"
     echo ""
     echo -e "    ${CYAN}4.${NC} Start trading on Polymarket:"
-    echo -e "       ${YELLOW}moltearn polymarket buy <market-id> <outcome> <amount>${NC}"
+    echo -e "       ${YELLOW}clawearn polymarket buy <market-id> <outcome> <amount>${NC}"
     echo ""
     echo -e "  ${BOLD}Useful Commands:${NC}"
-    echo -e "    ${YELLOW}moltearn --help${NC}               Show all commands"
-    echo -e "    ${YELLOW}moltearn wallet balance${NC}       Check your balances"
-    echo -e "    ${YELLOW}moltearn polymarket search${NC}    Search prediction markets"
+    echo -e "    ${YELLOW}clawearn --help${NC}               Show all commands"
+    echo -e "    ${YELLOW}clawearn wallet balance${NC}       Check your balances"
+    echo -e "    ${YELLOW}clawearn polymarket search${NC}    Search prediction markets"
     echo ""
     echo -e "  ${BOLD}Documentation:${NC}"
-    echo -e "    ${BLUE}https://github.com/stonega/moltearn${NC}"
+    echo -e "    ${BLUE}https://github.com/stonega/clawearn${NC}"
     echo ""
 }
 
@@ -276,9 +276,9 @@ uninstall() {
     fi
     
     # Remove symlink
-    if [ -f "$BIN_DIR/moltearn" ]; then
-        rm -f "$BIN_DIR/moltearn"
-        success "Removed $BIN_DIR/moltearn"
+    if [ -f "$BIN_DIR/clawearn" ]; then
+        rm -f "$BIN_DIR/clawearn"
+        success "Removed $BIN_DIR/clawearn"
     fi
     
     echo ""
@@ -307,8 +307,8 @@ main() {
         echo "  -u, --uninstall   Uninstall Moltearn CLI"
         echo ""
         echo "Environment Variables:"
-        echo "  MOLTEARN_INSTALL_DIR    Installation directory (default: ~/.moltearn)"
-        echo "  MOLTEARN_BIN_DIR        Binary directory (default: ~/.local/bin)"
+        echo "  CLAW_EARN_INSTALL_DIR    Installation directory (default: ~/.clawearn)"
+        echo "  CLAW_EARN_BIN_DIR        Binary directory (default: ~/.local/bin)"
         exit 0
     fi
     

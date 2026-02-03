@@ -21,11 +21,11 @@ Complete CLI tool enabling AI agents to trade prediction markets on Polymarket.
 
 **Install locally:**
 ```bash
-mkdir -p ~/.moltearn/skills/polymarket-trading
-curl -s http://localhost:3000/skills/polymarket-trading/SKILL.md > ~/.moltearn/skills/polymarket-trading/SKILL.md
-curl -s http://localhost:3000/skills/polymarket-trading/README.md > ~/.moltearn/skills/polymarket-trading/README.md
-curl -s http://localhost:3000/skills/polymarket-trading/SETUP.md > ~/.moltearn/skills/polymarket-trading/SETUP.md
-curl -s http://localhost:3000/skills/polymarket-trading/INDEX.md > ~/.moltearn/skills/polymarket-trading/INDEX.md
+mkdir -p ~/.clawearn/skills/polymarket-trading
+curl -s https://clawearn.xyz/skills/polymarket-trading/SKILL.md > ~/.clawearn/skills/polymarket-trading/SKILL.md
+curl -s https://clawearn.xyz/skills/polymarket-trading/README.md > ~/.clawearn/skills/polymarket-trading/README.md
+curl -s https://clawearn.xyz/skills/polymarket-trading/SETUP.md > ~/.clawearn/skills/polymarket-trading/SETUP.md
+curl -s https://clawearn.xyz/skills/polymarket-trading/INDEX.md > ~/.clawearn/skills/polymarket-trading/INDEX.md
 ```
 
 **Or read them directly from the URLs above!**
@@ -42,7 +42,7 @@ curl -s http://localhost:3000/skills/polymarket-trading/INDEX.md > ~/.moltearn/s
 ## Quick Start
 
 ```bash
-moltearn polymarket --help
+clawearn polymarket --help
 ```
 
 ## Core Features
@@ -51,16 +51,16 @@ moltearn polymarket --help
 
 **Create a new account:**
 ```bash
-moltearn polymarket account create --email user@example.com --password yourpassword
+clawearn polymarket account create --email user@example.com --password yourpassword
 ```
 
 **Export private key:**
 ```bash
-moltearn polymarket account export-key --email user@example.com --password yourpassword
+clawearn polymarket account export-key --email user@example.com --password yourpassword
 ```
 
 ⚠️ **Save your private key immediately!** Store it securely in:
-- `~/.config/moltearn/credentials.json`
+- `~/.config/clawearn/credentials.json`
 - Environment variable: `POLYMARKET_PRIVATE_KEY`
 - Your agent's secure credential storage
 
@@ -78,12 +78,12 @@ moltearn polymarket account export-key --email user@example.com --password yourp
 
 **Request pocket money (for testing/dev):**
 ```bash
-moltearn polymarket balance pocket-money --amount 100
+clawearn polymarket balance pocket-money --amount 100
 ```
 
 **Check balance:**
 ```bash
-moltearn polymarket balance check --private-key $YOUR_PRIVATE_KEY
+clawearn polymarket balance check --private-key $YOUR_PRIVATE_KEY
 ```
 
 
@@ -91,7 +91,7 @@ moltearn polymarket balance check --private-key $YOUR_PRIVATE_KEY
 
 **Deposit via CLI:**
 ```bash
-moltearn polymarket deposit --amount 100
+clawearn polymarket deposit --amount 100
 ```
 
 The tool will automatically fetch your unique deposit address from Polymarket and send funds from your Arbitrum wallet.
@@ -103,36 +103,36 @@ The tool will automatically fetch your unique deposit address from Polymarket an
 
 **Search markets by keyword:**
 ```bash
-moltearn polymarket market search --query "bitcoin price 2025"
+clawearn polymarket market search --query "bitcoin price 2025"
 ```
 
 **Get active markets by category:**
 ```bash
-moltearn polymarket market list --tag politics --limit 10
+clawearn polymarket market list --tag politics --limit 10
 ```
 
 **Get market details:**
 ```bash
-moltearn polymarket market info --market-id MARKET_ID
+clawearn polymarket market info --market-id MARKET_ID
 ```
 
 ### 5. Price Data
 
 **Get current market price:**
 ```bash
-moltearn polymarket price get --token-id TOKEN_ID --side buy
+clawearn polymarket price get --token-id TOKEN_ID --side buy
 ```
 
 **View order book depth:**
 ```bash
-moltearn polymarket price book --token-id TOKEN_ID
+clawearn polymarket price book --token-id TOKEN_ID
 ```
 
 ### 6. Trading
 
 **Place a buy order:**
 ```bash
-moltearn polymarket order buy \
+clawearn polymarket order buy \
   --token-id TOKEN_ID \
   --price 0.50 \
   --size 10 \
@@ -142,7 +142,7 @@ moltearn polymarket order buy \
 
 **Place a sell order:**
 ```bash
-moltearn polymarket order sell \
+clawearn polymarket order sell \
   --token-id TOKEN_ID \
   --price 0.75 \
   --size 5 \
@@ -152,12 +152,12 @@ moltearn polymarket order sell \
 
 **View open orders:**
 ```bash
-moltearn polymarket order list-open
+clawearn polymarket order list-open
 ```
 
 **Cancel an order:**
 ```bash
-moltearn polymarket order cancel \
+clawearn polymarket order cancel \
   --order-id ORDER_ID
 ```
 
@@ -215,16 +215,16 @@ Error: Order failed (negRisk)
 
 ```bash
 # 1. Search for a market
-moltearn polymarket market search --query "Biden approval rating"
+clawearn polymarket market search --query "Biden approval rating"
 
 # 2. Get market details (find token ID)
-moltearn polymarket market info --market-id 0x...
+clawearn polymarket market info --market-id 0x...
 
 # 3. Check current price
-moltearn polymarket price get --token-id 0x... --side buy
+clawearn polymarket price get --token-id 0x... --side buy
 
 # 4. Place an order
-moltearn polymarket order buy \
+clawearn polymarket order buy \
   --token-id 0x... \
   --price 0.45 \
   --size 20 \
@@ -236,13 +236,13 @@ moltearn polymarket order buy \
 
 ```bash
 # 1. Create new account
-moltearn polymarket account create --email agent@openclaw.io --password secure123
+clawearn polymarket account create --email agent@openclaw.io --password secure123
 
 # 2. Request testnet funds
-moltearn polymarket balance pocket-money --amount 50
+clawearn polymarket balance pocket-money --amount 50
 
 # 3. Check balance
-moltearn polymarket balance check --private-key <exported-key>
+clawearn polymarket balance check --private-key <exported-key>
 ```
 
 ---
@@ -250,12 +250,12 @@ moltearn polymarket balance check --private-key <exported-key>
 ## CLI Installation
 
 ```bash
-# Install moltearn CLI globally
-cd /path/to/moltearn
+# Install clawearn CLI globally
+cd /path/to/clawearn
 bun link
 
 # Now you can use:
-moltearn polymarket --help
+clawearn polymarket --help
 ```
 
 ---

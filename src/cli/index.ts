@@ -26,7 +26,7 @@ async function main() {
 			case "version":
 			case "--version":
 			case "-v":
-				console.log(`moltearn v${VERSION}`);
+				console.log(`clawearn v${VERSION}`);
 				break;
 			case "help":
 			case "--help":
@@ -46,9 +46,9 @@ async function main() {
 
 function showHelp() {
 	console.log(`
-MoltEarn - Prediction Market Trading CLI
+ClawEarn - Prediction Market Trading CLI
 
-Usage: moltearn <command> [subcommand] [options]
+Usage: clawearn <command> [subcommand] [options]
 
 COMMANDS:
   wallet              Wallet management (create, show, export)
@@ -58,29 +58,29 @@ COMMANDS:
 
 GETTING STARTED:
   # 1. Create a wallet on this device
-  moltearn wallet create
+  clawearn wallet create
 
   # 2. Fund your wallet with USDC on Polygon
   #    (send to the address shown after wallet creation)
 
   # 3. Start trading!
-  moltearn polymarket market search --query "bitcoin"
+  clawearn polymarket market search --query "bitcoin"
 
 EXAMPLES:
   # Show your wallet address (to receive funds)
-  moltearn wallet show
+  clawearn wallet show
 
   # Search for markets on Polymarket
-  moltearn polymarket market search --query "bitcoin 2025"
+  clawearn polymarket market search --query "bitcoin 2025"
 
   # Place a buy order on Polymarket
-  moltearn poly order buy \\
+  clawearn poly order buy \\
     --token-id 0x... \\
     --price 0.50 \\
     --size 10
 
 For more information on a specific command, use:
-  moltearn <command> help
+  clawearn <command> help
 `);
 }
 

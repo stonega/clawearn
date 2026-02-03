@@ -31,15 +31,15 @@ bun polymarket-cli.ts account export-key --email agent@example.com --password SE
 **Save the private key securely:**
 ```bash
 # Create secure storage
-mkdir -p ~/.config/moltearn
-chmod 700 ~/.config/moltearn
+mkdir -p ~/.config/clawearn
+chmod 700 ~/.config/clawearn
 
 # Save private key (replace with your actual key)
-echo "0xYOUR_PRIVATE_KEY_HERE" > ~/.config/moltearn/polymarket-key.txt
-chmod 600 ~/.config/moltearn/polymarket-key.txt
+echo "0xYOUR_PRIVATE_KEY_HERE" > ~/.config/clawearn/polymarket-key.txt
+chmod 600 ~/.config/clawearn/polymarket-key.txt
 
 # Set environment variable
-export POLYMARKET_PRIVATE_KEY=$(cat ~/.config/moltearn/polymarket-key.txt)
+export POLYMARKET_PRIVATE_KEY=$(cat ~/.config/clawearn/polymarket-key.txt)
 ```
 
 ### Option 2: Use Existing Wallet
@@ -48,8 +48,8 @@ If you already have a wallet:
 
 ```bash
 # Save your existing private key
-echo "0xYOUR_EXISTING_KEY" > ~/.config/moltearn/polymarket-key.txt
-chmod 600 ~/.config/moltearn/polymarket-key.txt
+echo "0xYOUR_EXISTING_KEY" > ~/.config/clawearn/polymarket-key.txt
+chmod 600 ~/.config/clawearn/polymarket-key.txt
 ```
 
 ### Signature Types
@@ -109,7 +109,7 @@ curl -X POST https://manifold.markets/api/v0/me/register \
   -d '{"username": "YourAgentName", "email": "agent@example.com"}'
 
 # Get API key
-# Save to ~/.config/moltearn/manifold-key.txt
+# Save to ~/.config/clawearn/manifold-key.txt
 ```
 
 ---
@@ -125,7 +125,7 @@ Kalshi uses traditional account-based system with USD.
 2. Complete KYC verification
 3. Link bank account
 4. Get API credentials
-5. Save to `~/.config/moltearn/kalshi-credentials.json`
+5. Save to `~/.config/clawearn/kalshi-credentials.json`
 
 ---
 
@@ -134,7 +134,7 @@ Kalshi uses traditional account-based system with USD.
 ### Recommended Structure
 
 ```
-~/.config/moltearn/
+~/.config/clawearn/
 ├── polymarket-key.txt          # Polymarket private key
 ├── manifold-key.txt            # Manifold API key
 ├── kalshi-credentials.json     # Kalshi API credentials
@@ -143,25 +143,25 @@ Kalshi uses traditional account-based system with USD.
 
 ### Master Config Example
 
-**`~/.config/moltearn/master-config.json`**
+**`~/.config/clawearn/master-config.json`**
 ```json
 {
   "wallets": {
     "polymarket": {
       "address": "0x1234...",
-      "key_path": "~/.config/moltearn/polymarket-key.txt",
+      "key_path": "~/.config/clawearn/polymarket-key.txt",
       "signature_type": 0,
       "network": "polygon",
       "enabled": true
     },
     "manifold": {
       "username": "YourAgent",
-      "key_path": "~/.config/moltearn/manifold-key.txt",
+      "key_path": "~/.config/clawearn/manifold-key.txt",
       "enabled": false
     },
     "kalshi": {
       "user_id": "your-user-id",
-      "key_path": "~/.config/moltearn/kalshi-credentials.json",
+      "key_path": "~/.config/clawearn/kalshi-credentials.json",
       "enabled": false
     }
   },
@@ -175,7 +175,7 @@ Kalshi uses traditional account-based system with USD.
 
 ### ✅ Essential Security Practices
 
-- [ ] Private keys stored in `~/.config/moltearn/` with 600 permissions
+- [ ] Private keys stored in `~/.config/clawearn/` with 600 permissions
 - [ ] Directory has 700 permissions (only you can access)
 - [ ] Keys never committed to git (add to .gitignore)
 - [ ] Keys never logged or printed to console
@@ -214,7 +214,7 @@ bun polymarket-cli.ts balance check --private-key $POLYMARKET_PRIVATE_KEY
 
 ```bash
 # Create a reference file (safe to share, no private keys)
-cat > ~/.moltearn/wallet-addresses.txt << EOF
+cat > ~/.clawearn/wallet-addresses.txt << EOF
 Polymarket: $(bun polymarket-cli.ts account info --private-key $POLYMARKET_PRIVATE_KEY | grep address)
 Manifold: YourUsername
 Kalshi: your-user-id
@@ -244,17 +244,17 @@ EOF
 #!/bin/bash
 # backup-wallets.sh
 
-BACKUP_DIR=~/moltearn-backup-$(date +%Y%m%d)
+BACKUP_DIR=~/clawearn-backup-$(date +%Y%m%d)
 mkdir -p $BACKUP_DIR
 
 # Backup config (contains addresses, not keys)
-cp ~/.moltearn/config.json $BACKUP_DIR/
+cp ~/.clawearn/config.json $BACKUP_DIR/
 
 # Backup wallet addresses
-cp ~/.moltearn/wallet-addresses.txt $BACKUP_DIR/
+cp ~/.clawearn/wallet-addresses.txt $BACKUP_DIR/
 
 # Create encrypted backup of keys
-tar -czf - ~/.config/moltearn/*.txt | \
+tar -czf - ~/.config/clawearn/*.txt | \
   gpg --symmetric --cipher-algo AES256 > $BACKUP_DIR/keys-encrypted.tar.gz.gpg
 
 echo "Backup created at $BACKUP_DIR"
@@ -270,7 +270,7 @@ echo "Store the encrypted keys file in a secure location!"
 BACKUP_DIR=$1
 
 # Restore config
-cp $BACKUP_DIR/config.json ~/.moltearn/
+cp $BACKUP_DIR/config.json ~/.clawearn/
 
 # Decrypt and restore keys
 gpg --decrypt $BACKUP_DIR/keys-encrypted.tar.gz.gpg | \
@@ -295,7 +295,7 @@ bun polymarket-cli.ts balance pocket-money --amount 100
 ### "Invalid private key" error
 ```bash
 # Verify key format (should start with 0x)
-cat ~/.config/moltearn/polymarket-key.txt
+cat ~/.config/clawearn/polymarket-key.txt
 
 # Re-export if needed
 bun polymarket-cli.ts account export-key --email YOUR_EMAIL --password YOUR_PASSWORD
@@ -304,8 +304,8 @@ bun polymarket-cli.ts account export-key --email YOUR_EMAIL --password YOUR_PASS
 ### "Permission denied" when accessing keys
 ```bash
 # Fix permissions
-chmod 700 ~/.config/moltearn
-chmod 600 ~/.config/moltearn/*.txt
+chmod 700 ~/.config/clawearn
+chmod 600 ~/.config/clawearn/*.txt
 ```
 
 ### Lost private key
@@ -338,11 +338,11 @@ bun polymarket-cli.ts account create --email agent@example.com --password PASS
 bun polymarket-cli.ts account export-key --email agent@example.com --password PASS
 
 # Save key securely
-mkdir -p ~/.config/moltearn && chmod 700 ~/.config/moltearn
-echo "0xKEY" > ~/.config/moltearn/polymarket-key.txt && chmod 600 ~/.config/moltearn/polymarket-key.txt
+mkdir -p ~/.config/clawearn && chmod 700 ~/.config/clawearn
+echo "0xKEY" > ~/.config/clawearn/polymarket-key.txt && chmod 600 ~/.config/clawearn/polymarket-key.txt
 
 # Set environment variable
-export POLYMARKET_PRIVATE_KEY=$(cat ~/.config/moltearn/polymarket-key.txt)
+export POLYMARKET_PRIVATE_KEY=$(cat ~/.config/clawearn/polymarket-key.txt)
 
 # Check balance
 bun polymarket-cli.ts balance check --private-key $POLYMARKET_PRIVATE_KEY

@@ -76,9 +76,9 @@ function requirePrivateKey(args: string[], command: string): string {
 	if (!key) {
 		console.error(`❌ No wallet found!`);
 		console.log(`\nTo use this command, either:`);
-		console.log(`  1. Create a wallet: moltearn wallet create`);
+		console.log(`  1. Create a wallet: clawearn wallet create`);
 		console.log(`  2. Or provide: --private-key <key>\n`);
-		console.log(`Example: moltearn ${command} --private-key 0x...`);
+		console.log(`Example: clawearn ${command} --private-key 0x...`);
 		process.exit(1);
 	}
 	return key;
@@ -93,7 +93,7 @@ async function handleAccount(args: string[]) {
 
 		if (!email || !password) {
 			console.error(
-				"Usage: moltearn polymarket account create --email <email> --password <password>",
+				"Usage: clawearn polymarket account create --email <email> --password <password>",
 			);
 			process.exit(1);
 		}
@@ -116,7 +116,7 @@ async function handleAccount(args: string[]) {
 
 		if (!privateKey && (!email || !password)) {
 			console.error(
-				"Usage: moltearn polymarket account export-key --private-key <key> OR --email <email> --password <password>",
+				"Usage: clawearn polymarket account export-key --private-key <key> OR --email <email> --password <password>",
 			);
 			process.exit(1);
 		}
@@ -126,7 +126,7 @@ async function handleAccount(args: string[]) {
 			"⚠️  NEVER share your private key. Use it only with trusted services.",
 		);
 	} else {
-		console.error("Usage: moltearn polymarket account [create|export-key]");
+		console.error("Usage: clawearn polymarket account [create|export-key]");
 		process.exit(1);
 	}
 }
@@ -174,7 +174,7 @@ async function handleBalance(args: string[]) {
 
 		if (!amount) {
 			console.error(
-				"Usage: moltearn polymarket balance pocket-money --amount <amount>",
+				"Usage: clawearn polymarket balance pocket-money --amount <amount>",
 			);
 			process.exit(1);
 		}
@@ -183,7 +183,7 @@ async function handleBalance(args: string[]) {
 		console.log("Note: Pocket money requires testnet setup or faucet access");
 		console.log("For production, deposit via Polymarket.com interface");
 	} else {
-		console.error("Usage: moltearn polymarket balance [check|pocket-money]");
+		console.error("Usage: clawearn polymarket balance [check|pocket-money]");
 		process.exit(1);
 	}
 }
@@ -195,7 +195,7 @@ async function handleMarket(args: string[]) {
 		const query = getArg(args, "--query");
 
 		if (!query) {
-			console.error("Usage: moltearn polymarket market search --query <query>");
+			console.error("Usage: clawearn polymarket market search --query <query>");
 			process.exit(1);
 		}
 
@@ -238,7 +238,7 @@ async function handleMarket(args: string[]) {
 		const marketId = getArg(args, "--market-id");
 
 		if (!marketId) {
-			console.error("Usage: moltearn polymarket market info --market-id <id>");
+			console.error("Usage: clawearn polymarket market info --market-id <id>");
 			process.exit(1);
 		}
 
@@ -256,7 +256,7 @@ async function handleMarket(args: string[]) {
 			process.exit(1);
 		}
 	} else {
-		console.error("Usage: moltearn polymarket market [search|list|info]");
+		console.error("Usage: clawearn polymarket market [search|list|info]");
 		process.exit(1);
 	}
 }
@@ -270,7 +270,7 @@ async function handlePrice(args: string[]) {
 
 		if (!tokenId) {
 			console.error(
-				"Usage: moltearn polymarket price get --token-id <id> [--side buy|sell]",
+				"Usage: clawearn polymarket price get --token-id <id> [--side buy|sell]",
 			);
 			process.exit(1);
 		}
@@ -294,7 +294,7 @@ async function handlePrice(args: string[]) {
 		const tokenId = getArg(args, "--token-id");
 
 		if (!tokenId) {
-			console.error("Usage: moltearn polymarket price book --token-id <id>");
+			console.error("Usage: clawearn polymarket price book --token-id <id>");
 			process.exit(1);
 		}
 
@@ -312,7 +312,7 @@ async function handlePrice(args: string[]) {
 			process.exit(1);
 		}
 	} else {
-		console.error("Usage: moltearn polymarket price [get|book]");
+		console.error("Usage: clawearn polymarket price [get|book]");
 		process.exit(1);
 	}
 }
@@ -329,7 +329,7 @@ async function handleOrder(args: string[]) {
 
 		if (!tokenId || price === 0 || size === 0) {
 			console.error(
-				`Usage: moltearn polymarket order ${subcommand} --token-id <id> --price <price> --size <size> [--signature-type <0|1|2>] [--funder <address>]`,
+				`Usage: clawearn polymarket order ${subcommand} --token-id <id> --price <price> --size <size> [--signature-type <0|1|2>] [--funder <address>]`,
 			);
 			process.exit(1);
 		}
@@ -434,7 +434,7 @@ async function handleOrder(args: string[]) {
 		const orderId = getArg(args, "--order-id");
 
 		if (!orderId) {
-			console.error("Usage: moltearn polymarket order cancel --order-id <id>");
+			console.error("Usage: clawearn polymarket order cancel --order-id <id>");
 			process.exit(1);
 		}
 
@@ -473,7 +473,7 @@ async function handleOrder(args: string[]) {
 		}
 	} else {
 		console.error(
-			"Usage: moltearn polymarket order [buy|sell|list-open|cancel]",
+			"Usage: clawearn polymarket order [buy|sell|list-open|cancel]",
 		);
 		process.exit(1);
 	}
@@ -520,7 +520,7 @@ async function handleDeposit(args: string[]) {
 
 	if (!amountStr) {
 		console.error(
-			"Usage: moltearn polymarket deposit --amount <amount> [--usdce]",
+			"Usage: clawearn polymarket deposit --amount <amount> [--usdce]",
 		);
 		process.exit(1);
 	}
@@ -595,11 +595,11 @@ function showPolymarketHelp() {
 	console.log(`
 Polymarket Trading Commands
 
-Usage: moltearn polymarket <command> [subcommand] [options]
+Usage: clawearn polymarket <command> [subcommand] [options]
 
 SETUP:
   First, create a wallet:
-    moltearn wallet create
+    clawearn wallet create
 
   Fund your wallet with USDC on Polygon, then start trading!
 
@@ -648,7 +648,7 @@ ORDER COMMANDS:
     --order-id <id>              Order ID to cancel
 
 NOTE: All commands use your stored wallet automatically.
-      Create one with: moltearn wallet create
+      Create one with: clawearn wallet create
 
 DEPOSIT COMMANDS:
   deposit
@@ -657,18 +657,18 @@ DEPOSIT COMMANDS:
 
 EXAMPLES:
   # Search for markets
-  moltearn polymarket market search --query "bitcoin 2025"
+  clawearn polymarket market search --query "bitcoin 2025"
 
   # Place a buy order (uses stored wallet)
-  moltearn poly order buy \\
+  clawearn poly order buy \\
     --token-id 0x... \\
     --price 0.50 \\
     --size 10
 
   # Check open orders
-  moltearn poly order list-open
+  clawearn poly order list-open
 
   # View your wallet address
-  moltearn polymarket account
+  clawearn polymarket account
 `);
 }

@@ -16,16 +16,16 @@ Compare with your saved version. If there's a new version, re-fetch the skill fi
 
 ```bash
 # Update main files
-curl -s http://localhost:3000/skills/SKILL.md > ~/.moltearn/skills/SKILL.md
-curl -s http://localhost:3000/skills/HEARTBEAT.md > ~/.moltearn/skills/HEARTBEAT.md
+curl -s http://localhost:3000/skills/SKILL.md > ~/.clawearn/skills/SKILL.md
+curl -s http://localhost:3000/skills/HEARTBEAT.md > ~/.clawearn/skills/HEARTBEAT.md
 
 # Update core files
-curl -s http://localhost:3000/skills/core/WALLET.md > ~/.moltearn/skills/core/WALLET.md
-curl -s http://localhost:3000/skills/core/SECURITY.md > ~/.moltearn/skills/core/SECURITY.md
+curl -s http://localhost:3000/skills/core/WALLET.md > ~/.clawearn/skills/core/WALLET.md
+curl -s http://localhost:3000/skills/core/SECURITY.md > ~/.clawearn/skills/core/SECURITY.md
 
 # Update enabled markets (check your config)
-for market in $(cat ~/.moltearn/config.json | jq -r '.enabled_markets[]'); do
-  curl -s http://localhost:3000/skills/markets/$market/SKILL.md > ~/.moltearn/skills/markets/$market/SKILL.md
+for market in $(cat ~/.clawearn/config.json | jq -r '.enabled_markets[]'); do
+  curl -s http://localhost:3000/skills/markets/$market/SKILL.md > ~/.clawearn/skills/markets/$market/SKILL.md
 done
 ```
 
@@ -36,7 +36,7 @@ done
 ## Check Your Configuration
 
 ```bash
-cat ~/.moltearn/config.json
+cat ~/.clawearn/config.json
 ```
 
 **Verify:**
@@ -53,8 +53,8 @@ Run the market-specific heartbeat routine:
 ### Polymarket
 ```bash
 # See detailed heartbeat in markets/polymarket/HEARTBEAT.md
-moltearn polymarket balance check --private-key $POLYMARKET_PRIVATE_KEY
-moltearn polymarket order list-open --private-key $POLYMARKET_PRIVATE_KEY
+clawearn polymarket balance check --private-key $POLYMARKET_PRIVATE_KEY
+clawearn polymarket order list-open --private-key $POLYMARKET_PRIVATE_KEY
 ```
 
 ### Manifold (when available)
@@ -85,8 +85,8 @@ echo ""
 TOTAL=0
 
 # Polymarket
-if [ -f ~/.config/moltearn/polymarket-key.txt ]; then
-  POLY_BALANCE=$(moltearn polymarket balance check --private-key $POLYMARKET_PRIVATE_KEY | grep -o '[0-9.]*')
+if [ -f ~/.config/clawearn/polymarket-key.txt ]; then
+  POLY_BALANCE=$(clawearn polymarket balance check --private-key $POLYMARKET_PRIVATE_KEY | grep -o '[0-9.]*')
   echo "Polymarket: \$$POLY_BALANCE USDC"
   TOTAL=$(echo "$TOTAL + $POLY_BALANCE" | bc)
 fi
@@ -286,16 +286,16 @@ For detailed market-specific routines, see:
 
 ```bash
 # Daily routine
-cat ~/.moltearn/config.json  # Check config
+cat ~/.clawearn/config.json  # Check config
 ./portfolio-summary.sh        # Get total portfolio value
 
 # Per-market checks
-moltearn polymarket balance check --private-key $POLYMARKET_PRIVATE_KEY
+clawearn polymarket balance check --private-key $POLYMARKET_PRIVATE_KEY
 curl https://manifold.markets/api/v0/me -H "Authorization: Bearer $MANIFOLD_API_KEY"
 curl https://trading-api.kalshi.com/v1/portfolio/balance -H "Authorization: Bearer $KALSHI_TOKEN"
 
 # Update skills
-curl -s http://localhost:3000/skills/SKILL.md > ~/.moltearn/skills/SKILL.md
+curl -s http://localhost:3000/skills/SKILL.md > ~/.clawearn/skills/SKILL.md
 ```
 
 ---
