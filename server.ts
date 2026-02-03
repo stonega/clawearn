@@ -57,15 +57,13 @@ serve({
 			}
 
 			// 3. Serve skills files (directory listing or file content)
-			// User update: skills are located in .agents/skills
 			if (path.startsWith("/skills/")) {
 				const relativePath = path.substring("/skills/".length);
 				// safe join to avoid directory traversal
-				// The physical path is .agents/skills/
-				const fullPath = join(process.cwd(), ".agents", "skills", relativePath);
+				const fullPath = join(process.cwd(), "skills", relativePath);
 
 				// basic security check
-				if (!fullPath.startsWith(join(process.cwd(), ".agents", "skills"))) {
+				if (!fullPath.startsWith(join(process.cwd(), "skills"))) {
 					return new Response("Forbidden", { status: 403 });
 				}
 

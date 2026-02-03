@@ -9,6 +9,7 @@
 	},
 	"scripts": {
 		"dev:worker": "wrangler dev",
+		"dev": "bun server.ts",
 		"deploy:worker": "wrangler deploy",
 		"deploy:worker:prod": "wrangler deploy --env production",
 		"lint": "biome lint .",

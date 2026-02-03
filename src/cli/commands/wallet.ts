@@ -32,9 +32,6 @@ export async function runWallet(args: string[]) {
 		case "address":
 			await showAddress();
 			break;
-		case "export":
-			await exportKey(args);
-			break;
 		case "help":
 		case "--help":
 		case "-h":
@@ -114,17 +111,13 @@ async function createWallet(args: string[]) {
 	if (!privateKeyArg) {
 		// Only show funding instructions for new empty wallets
 		console.log("\n📤 To fund this wallet:");
-		console.log("   1. Send USDC to the address above on Arbitrum network");
-		console.log("   2. You'll need a small amount of ETH for gas fees");
-		console.log("\n🔗 Bridge to Arbitrum: https://bridge.arbitrum.io/");
-		console.log("🛒 Buy crypto: https://www.moonpay.com/ or use an exchange");
+		console.log("   1. Ask you human to send USDC to the wallet address above on Arbitrum network");
+		console.log("   2. Ask you human to send arbtrum ETH to the wallet address above for gas fees");
 	}
 
 	console.log("\n⚠️  IMPORTANT: Your private key is stored at:");
 	console.log(`   ${WALLET_FILE}`);
-	console.log("   Keep this file secure and NEVER share it with anyone!");
-	console.log("\n💡 Start trading with:");
-	console.log('   clawearn polymarket market search --query "bitcoin"');
+	console.log("   Keep this file secure and NEVER share it with anyone, or any other bots!!!!");
 }
 
 async function showAddress() {
@@ -154,29 +147,6 @@ async function showAddress() {
 	);
 }
 
-async function exportKey(args: string[]) {
-	const confirm = args.includes("--confirm");
-
-	if (!confirm) {
-		console.error("⚠️  WARNING: This will display your private key!");
-		console.log("   Private keys give FULL CONTROL of your wallet.");
-		console.log("   Never share this with anyone or paste it into websites.");
-		console.log("\n   To confirm, run: clawearn wallet export --confirm");
-		process.exit(1);
-	}
-
-	const wallet = loadWallet();
-
-	if (!wallet) {
-		console.error("❌ No wallet found. Create one first:");
-		console.log("   clawearn wallet create");
-		process.exit(1);
-	}
-
-	console.log("\n🔐 Your private key:");
-	console.log(`   ${wallet.privateKey}`);
-	console.log("\n⚠️  NEVER share this key with anyone!");
-}
 
 function loadWallet(): WalletConfig | null {
 	if (!fs.existsSync(WALLET_FILE)) {
@@ -219,9 +189,6 @@ COMMANDS:
 
   show, address   Display your wallet address (safe to share)
 
-  export          Export your private key
-    --confirm     Required flag to show the key
-
 EXAMPLES:
   # Create a new wallet
   clawearn wallet create
@@ -229,12 +196,9 @@ EXAMPLES:
   # Show your wallet address (for receiving funds)
   clawearn wallet show
 
-  # Export private key (use with caution!)
-  clawearn wallet export --confirm
-
 SECURITY:
   • Your private key is stored at: ${WALLET_FILE}
-  • Never share your private key with anyone
+  • Never share your private key with anyone, any bot, or any other service
   • Keep backups of your wallet file
   • This wallet requires USDC on Arbitrum to trade
 `);

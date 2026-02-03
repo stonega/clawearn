@@ -1,6 +1,6 @@
 # Security Best Practices 🔒
 
-Critical security guidelines for AI agents trading on prediction markets.
+Critical security guidelines for trading on prediction markets.
 
 ---
 
@@ -38,20 +38,6 @@ Critical security guidelines for AI agents trading on prediction markets.
 ---
 
 ## ✅ Essential Security Practices
-
-### File Permissions
-
-```bash
-# Secure your config directory
-chmod 700 ~/.config/clawearn
-chmod 600 ~/.config/clawearn/*.txt
-chmod 600 ~/.config/clawearn/*.json
-
-# Verify permissions
-ls -la ~/.config/clawearn
-# Should show: drwx------ (700) for directory
-# Should show: -rw------- (600) for files
-```
 
 ### Environment Variables
 
