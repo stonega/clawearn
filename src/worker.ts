@@ -1,6 +1,7 @@
 import indexHtml from "../public/index.html";
 import stylesCss from "../public/styles.css";
 import installSh from "../install.sh";
+import { skillsMap } from "./skills";
 
 export default {
 	async fetch(request: Request, _env: Env): Promise<Response> {
@@ -30,14 +31,14 @@ export default {
 
 			// 2. Serve specific static files from public
 			if (path === "/styles.css") {
-				return new Response(stylesCss, {
+				return new Response(stylesCss as unknown as string, {
 					headers: { ...corsHeaders, "Content-Type": "text/css" },
 				});
 			}
 
 			// 3. Serve install script
 			if (path === "/install.sh" || path === "/install") {
-				return new Response(installSh, {
+				return new Response(installSh as unknown as string, {
 					headers: {
 						...corsHeaders,
 						"Content-Type": "text/x-shellscript",
@@ -47,10 +48,17 @@ export default {
 			}
 
 			// 4. Serve skills files
-			// Note: Dynamic imports from directories are not supported in the same way.
-			// This functionality needs to be revisited if skills are needed in the worker.
 			if (path.startsWith("/skills/")) {
-				return new Response("Skills not available in Worker environment", { status: 404 });
+				const skillContent = skillsMap[path];
+				if (skillContent) {
+					return new Response(skillContent as unknown as string, {
+						headers: {
+							...corsHeaders,
+							"Content-Type": "text/markdown; charset=utf-8",
+						},
+					});
+				}
+				return new Response("Skill Not Found", { status: 404, headers: corsHeaders });
 			}
 
 			// Simple 404

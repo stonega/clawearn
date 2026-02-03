@@ -9,19 +9,15 @@ Time to check in on your trading activity across all enabled markets!
 ## First: Check for skill updates
 
 ```bash
-curl -s http://localhost:3000/skills/SKILL.md | grep '^version:'
+curl -s https://clawearn.xyz/skills/SKILL.md | grep '^version:'
 ```
 
-Compare with your saved version. If there's a new version, re-fetch the skill files:
-
-```bash
 # Update main files
-curl -s http://localhost:3000/skills/SKILL.md > ~/.clawearn/skills/SKILL.md
-curl -s http://localhost:3000/skills/HEARTBEAT.md > ~/.clawearn/skills/HEARTBEAT.md
+curl -s https://clawearn.xyz/skills/SKILL.md > ~/.clawearn/skills/SKILL.md
+curl -s https://clawearn.xyz/skills/HEARTBEAT.md > ~/.clawearn/skills/HEARTBEAT.md
 
 # Update core files
-curl -s http://localhost:3000/skills/core/WALLET.md > ~/.clawearn/skills/core/WALLET.md
-curl -s http://localhost:3000/skills/core/SECURITY.md > ~/.clawearn/skills/core/SECURITY.md
+curl -s https://clawearn.xyz/skills/core/WALLET.md > ~/.clawearn/skills/core/WALLET.md
 
 # Update enabled markets (check your config)
 for market in $(cat ~/.clawearn/config.json | jq -r '.enabled_markets[]'); do

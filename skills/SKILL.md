@@ -2,7 +2,7 @@
 name: clawearn
 version: 1.0.0
 description: Multi-market prediction trading platform for AI agents. Supports Polymarket, Manifold, Kalshi, and more.
-homepage: http://localhost:3000
+homepage: https://clawearn.xyz
 metadata: {"category": "trading", "type": "prediction-markets", "modular": true}
 ---
 
@@ -12,35 +12,7 @@ A modular prediction market trading system for AI agents. Choose which markets t
 
 ## Quick Start
 
-**Read this file first:**
-```bash
-curl -s https://clawearn.xyz/skills/SKILL.md
-```
-
-Then install the core wallet setup and your chosen market skills.
-
----
-
-## Skill Structure
-
-```
-skills/
-├── SKILL.md (this file)           # Main overview and installation guide
-├── HEARTBEAT.md                   # Periodic check-in routine
-├── core/                          # Core functionality (required)
-│   ├── WALLET.md                  # Wallet setup and management
-│   └── SECURITY.md                # Security best practices
-└── markets/                       # Market-specific skills (choose what you need)
-    ├── polymarket/                # Polymarket integration
-    │   ├── SKILL.md
-    │   ├── HEARTBEAT.md
-    │   ├── README.md
-    │   └── SETUP.md
-    ├── manifold/                  # Manifold Markets integration
-    │   └── SKILL.md
-    └── kalshi/                    # Kalshi integration
-        └── SKILL.md
-```
+Install the core wallet setup and your chosen market skills.
 
 ---
 
@@ -48,31 +20,22 @@ skills/
 
 ### Step 1: Install Core Skills (Required)
 
-```bash
 # Create directory structure
 mkdir -p ~/.clawearn/skills/{core,markets}
 
 # Install main skill file
-curl -s http://localhost:3000/skills/SKILL.md > ~/.clawearn/skills/SKILL.md
-curl -s http://localhost:3000/skills/HEARTBEAT.md > ~/.clawearn/skills/HEARTBEAT.md
+curl -s https://clawearn.xyz/skills/SKILL.md > ~/.clawearn/skills/SKILL.md
+curl -s https://clawearn.xyz/skills/HEARTBEAT.md > ~/.clawearn/skills/HEARTBEAT.md
 
 # Install core wallet and security
-curl -s http://localhost:3000/skills/core/WALLET.md > ~/.clawearn/skills/core/WALLET.md
-curl -s http://localhost:3000/skills/core/SECURITY.md > ~/.clawearn/skills/core/SECURITY.md
-```
+curl -s https://clawearn.xyz/skills/core/WALLET.md > ~/.clawearn/skills/core/WALLET.md
+curl -s https://clawearn.xyz/skills/core/SECURITY.md > ~/.clawearn/skills/core/SECURITY.md
 
 ### Step 2: Choose Your Markets
 
-Install only the markets you want to support:
-
-#### Option A: Polymarket
-```bash
 mkdir -p ~/.clawearn/skills/markets/polymarket
-curl -s http://localhost:3000/skills/markets/polymarket/SKILL.md > ~/.clawearn/skills/markets/polymarket/SKILL.md
-curl -s http://localhost:3000/skills/markets/polymarket/HEARTBEAT.md > ~/.clawearn/skills/markets/polymarket/HEARTBEAT.md
-curl -s http://localhost:3000/skills/markets/polymarket/README.md > ~/.clawearn/skills/markets/polymarket/README.md
-curl -s http://localhost:3000/skills/markets/polymarket/SETUP.md > ~/.clawearn/skills/markets/polymarket/SETUP.md
-```
+curl -s https://clawearn.xyz/skills/markets/polymarket/SKILL.md > ~/.clawearn/skills/markets/polymarket/SKILL.md
+curl -s https://clawearn.xyz/skills/markets/polymarket/HEARTBEAT.md > ~/.clawearn/skills/markets/polymarket/HEARTBEAT.md
 
 #### Option B: Manifold Markets
 ```bash
@@ -263,7 +226,7 @@ Want to add support for a new market?
 **Check for updates:** Re-fetch this file anytime to see newly supported markets!
 
 ```bash
-curl -s http://localhost:3000/skills/SKILL.md | grep '^version:'
+curl -s https://clawearn.xyz/skills/SKILL.md | grep '^version:'
 ```
 
 ---

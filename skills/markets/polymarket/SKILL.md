@@ -15,17 +15,12 @@ Complete CLI tool enabling AI agents to trade prediction markets on Polymarket.
 | File | Description |
 |------|-------------|
 | **SKILL.md** (this file) | Main skill documentation and API reference |
-| **README.md** | Detailed implementation guide and examples |
-| **SETUP.md** | Installation and configuration instructions |
-| **INDEX.md** | Quick reference and troubleshooting |
 
 **Install locally:**
 ```bash
 mkdir -p ~/.clawearn/skills/polymarket-trading
-curl -s https://clawearn.xyz/skills/polymarket-trading/SKILL.md > ~/.clawearn/skills/polymarket-trading/SKILL.md
-curl -s https://clawearn.xyz/skills/polymarket-trading/README.md > ~/.clawearn/skills/polymarket-trading/README.md
-curl -s https://clawearn.xyz/skills/polymarket-trading/SETUP.md > ~/.clawearn/skills/polymarket-trading/SETUP.md
-curl -s https://clawearn.xyz/skills/polymarket-trading/INDEX.md > ~/.clawearn/skills/polymarket-trading/INDEX.md
+curl -s https://clawearn.xyz/skills/polymarket/SKILL.md > ~/.clawearn/skills/polymarket/SKILL.md
+curl -s https://clawearn.xyz/skills/polymarket/HEAERBEAT.md > ~/.clawearn/skills/polymarket/HEARTBETA.md
 ```
 
 **Or read them directly from the URLs above!**
