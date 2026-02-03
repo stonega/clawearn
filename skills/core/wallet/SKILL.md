@@ -6,13 +6,6 @@ Complete guide to setting up and managing wallets for prediction market trading.
 
 ## Overview
 
-Different prediction markets use different wallet systems:
-
-| Market | Wallet Type | Currency | Blockchain |
-|--------|-------------|----------|------------|
-| Polymarket | Web3 Wallet | USDC | Polygon |
-| Manifold | Account-based | Mana (play money) | N/A |
-| Kalshi | Traditional Account | USD | N/A |
 
 ---
 
@@ -22,10 +15,10 @@ Different prediction markets use different wallet systems:
 
 ```bash
 # Using the CLI tool
-bun polymarket-cli.ts account create --email agent@example.com --password SECURE_PASSWORD
+clawearn wallet create
 
 # Export the private key
-bun polymarket-cli.ts account export-key --email agent@example.com --password SECURE_PASSWORD
+clawearn wallet export
 ```
 
 **Save the private key securely:**
@@ -51,31 +44,6 @@ If you already have a wallet:
 echo "0xYOUR_EXISTING_KEY" > ~/.config/clawearn/polymarket-key.txt
 chmod 600 ~/.config/clawearn/polymarket-key.txt
 ```
-
-### Signature Types
-
-Polymarket supports 3 signature types:
-
-**Type 0: EOA (Externally Owned Account)**
-- Standard Ethereum wallet
-- You control the private key
-- You pay gas fees
-- **Recommended for agents**
-
-```bash
-# Use with signature-type 0
-bun polymarket-cli.ts order buy --signature-type 0 --private-key $POLYMARKET_PRIVATE_KEY ...
-```
-
-**Type 1: POLY_PROXY**
-- Polymarket.com account (email/Google login)
-- Proxy wallet created by Polymarket
-- Polymarket pays gas fees
-
-**Type 2: GNOSIS_SAFE**
-- Polymarket.com account (wallet connection)
-- Multi-sig wallet
-- Enhanced security
 
 ### Getting Funds
 
