@@ -1,3 +1,7 @@
+import indexHtml from "../public/index.html";
+import stylesCss from "../public/styles.css";
+import installSh from "../install.sh";
+
 export default {
 	async fetch(request: Request, _env: Env): Promise<Response> {
 		const url = new URL(request.url);
@@ -19,30 +23,21 @@ export default {
 		try {
 			// 1. Serve Homepage
 			if (path === "/" || path === "/index.html") {
-				const indexContent = await fetch(
-					new URL("./public/index.html", import.meta.url),
-				);
-				return new Response(indexContent.body, {
+				return new Response(indexHtml as unknown as string, {
 					headers: { ...corsHeaders, "Content-Type": "text/html" },
 				});
 			}
 
 			// 2. Serve specific static files from public
 			if (path === "/styles.css") {
-				const cssContent = await fetch(
-					new URL("./public/styles.css", import.meta.url),
-				);
-				return new Response(cssContent.body, {
+				return new Response(stylesCss, {
 					headers: { ...corsHeaders, "Content-Type": "text/css" },
 				});
 			}
 
 			// 3. Serve install script
 			if (path === "/install.sh" || path === "/install") {
-				const installContent = await fetch(
-					new URL("../install.sh", import.meta.url),
-				);
-				return new Response(installContent.body, {
+				return new Response(installSh, {
 					headers: {
 						...corsHeaders,
 						"Content-Type": "text/x-shellscript",
@@ -51,17 +46,11 @@ export default {
 				});
 			}
 
-			// 4. Serve skills files (from public/skills)
+			// 4. Serve skills files
+			// Note: Dynamic imports from directories are not supported in the same way.
+			// This functionality needs to be revisited if skills are needed in the worker.
 			if (path.startsWith("/skills/")) {
-				const relativePath = path.substring("/skills/".length);
-				try {
-					const skillsContent = await fetch(
-						new URL(`./public/skills/${relativePath}`, import.meta.url),
-					);
-					return new Response(skillsContent.body, { headers: corsHeaders });
-				} catch {
-					return new Response("Not Found", { status: 404 });
-				}
+				return new Response("Skills not available in Worker environment", { status: 404 });
 			}
 
 			// Simple 404

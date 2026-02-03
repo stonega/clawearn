@@ -6,3 +6,7 @@ compatibility_date = "2023-10-30"
 [env.production]
 name = "clawearn-prod"
 route = "https://clawearn.workers.dev/*"
+
+[[rules]]
+type = "Text"
+globs = ["**/*.html", "**/*.css", "**/*.sh"]
