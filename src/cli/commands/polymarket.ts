@@ -98,13 +98,7 @@ async function handleAccount(args: string[]) {
 		return;
 	}
 
-	if (subcommand === "create") {
-		console.error("deprecated: Use 'clawearn wallet create' instead.");
-		console.log(
-			"To import a private key: clawearn wallet create --private-key <key>",
-		);
-		process.exit(1);
-	} else if (subcommand === "export-key") {
+	if (subcommand === "export-key") {
 		console.error("deprecated: Use 'clawearn wallet export' instead.");
 		process.exit(1);
 	} else if (subcommand === "info") {
