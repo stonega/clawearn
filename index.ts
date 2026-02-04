@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { serve } from "bun";
 
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 console.log(`Starting Clawearn server on http://localhost:${port}...`);
 

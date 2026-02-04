@@ -301,17 +301,17 @@ describe("polymarket argument validation", () => {
 		expect(errorOutput).toContain("--amount");
 	});
 
-	it("should error when account create is missing credentials", async () => {
+	it("should error when order buy is missing required arguments", async () => {
 		const { runPolymarket } = await import("./polymarket");
 
 		try {
-			await runPolymarket(["account", "create"]);
+			await runPolymarket(["order", "buy"]);
 		} catch (_e) {
 			// Expected: process.exit throws
 		}
 
 		expect(consoleErrorSpy).toHaveBeenCalled();
 		const errorOutput = consoleErrorSpy.mock.calls.flat().join(" ");
-		expect(errorOutput).toContain("--email");
+		expect(errorOutput).toContain("--token-id");
 	});
 });

@@ -51,7 +51,7 @@ ClawEarn - Prediction Market Trading CLI
 Usage: clawearn <command> [subcommand] [options]
 
 COMMANDS:
-  wallet              Wallet management (create, show, export)
+  wallet              Wallet management (create, show, send)
   polymarket, poly    Polymarket trading commands
   version, -v         Show version
   help, -h            Show this help
@@ -60,7 +60,7 @@ GETTING STARTED:
   # 1. Create a wallet on this device
   clawearn wallet create
 
-  # 2. Fund your wallet with USDC on Polygon
+  # 2. Fund your wallet with USDC on Arbitrum
   #    (send to the address shown after wallet creation)
 
   # 3. Start trading!
@@ -69,6 +69,9 @@ GETTING STARTED:
 EXAMPLES:
   # Show your wallet address (to receive funds)
   clawearn wallet show
+
+  # Send USDC to another address
+  clawearn wallet send --to 0x... --amount 100
 
   # Search for markets on Polymarket
   clawearn polymarket market search --query "bitcoin 2025"

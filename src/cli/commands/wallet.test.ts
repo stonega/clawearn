@@ -133,3 +133,140 @@ describe("runWallet command routing", () => {
 		);
 	});
 });
+
+describe("wallet send command validation", () => {
+	let consoleLogSpy: ReturnType<typeof spyOn>;
+	let consoleErrorSpy: ReturnType<typeof spyOn>;
+	let processExitSpy: ReturnType<typeof spyOn>;
+
+	beforeEach(() => {
+		consoleLogSpy = spyOn(console, "log").mockImplementation(() => {});
+		consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
+		processExitSpy = spyOn(process, "exit").mockImplementation(() => {
+			throw new Error("process.exit called");
+		});
+	});
+
+	afterEach(() => {
+		consoleLogSpy.mockRestore();
+		consoleErrorSpy.mockRestore();
+		processExitSpy.mockRestore();
+	});
+
+	it("should error when send is missing --to and --amount", async () => {
+		const { runWallet } = await import("./wallet");
+
+		try {
+			await runWallet(["send"]);
+		} catch (_e) {
+			// Expected: process.exit throws
+		}
+
+		expect(consoleErrorSpy).toHaveBeenCalled();
+		const errorOutput = consoleErrorSpy.mock.calls.flat().join(" ");
+		expect(errorOutput).toContain("--to");
+		expect(errorOutput).toContain("--amount");
+	});
+
+	it("should error when send is missing --to", async () => {
+		const { runWallet } = await import("./wallet");
+
+		try {
+			await runWallet(["send", "--amount", "100"]);
+		} catch (_e) {
+			// Expected: process.exit throws
+		}
+
+		expect(consoleErrorSpy).toHaveBeenCalled();
+		const errorOutput = consoleErrorSpy.mock.calls.flat().join(" ");
+		expect(errorOutput).toContain("--to");
+	});
+
+	it("should error when send is missing --amount", async () => {
+		const { runWallet } = await import("./wallet");
+
+		try {
+			await runWallet(["send", "--to", "0x1234567890123456789012345678901234567890"]);
+		} catch (_e) {
+			// Expected: process.exit throws
+		}
+
+		expect(consoleErrorSpy).toHaveBeenCalled();
+		const errorOutput = consoleErrorSpy.mock.calls.flat().join(" ");
+		expect(errorOutput).toContain("--amount");
+	});
+
+	it("should error on invalid recipient address", async () => {
+		const { runWallet } = await import("./wallet");
+
+		try {
+			await runWallet(["send", "--to", "invalid-address", "--amount", "100"]);
+		} catch (_e) {
+			// Expected: process.exit throws
+		}
+
+		expect(consoleErrorSpy).toHaveBeenCalled();
+		const errorOutput = consoleErrorSpy.mock.calls.flat().join(" ");
+		expect(errorOutput).toContain("Invalid recipient address");
+	});
+
+	it("should error on invalid amount (non-numeric)", async () => {
+		const { runWallet } = await import("./wallet");
+
+		try {
+			await runWallet([
+				"send",
+				"--to",
+				"0x1234567890123456789012345678901234567890",
+				"--amount",
+				"invalid",
+			]);
+		} catch (_e) {
+			// Expected: process.exit throws
+		}
+
+		expect(consoleErrorSpy).toHaveBeenCalled();
+		const errorOutput = consoleErrorSpy.mock.calls.flat().join(" ");
+		expect(errorOutput).toContain("Invalid amount");
+	});
+
+	it("should error on negative amount", async () => {
+		const { runWallet } = await import("./wallet");
+
+		try {
+			await runWallet([
+				"send",
+				"--to",
+				"0x1234567890123456789012345678901234567890",
+				"--amount",
+				"-100",
+			]);
+		} catch (_e) {
+			// Expected: process.exit throws
+		}
+
+		expect(consoleErrorSpy).toHaveBeenCalled();
+		const errorOutput = consoleErrorSpy.mock.calls.flat().join(" ");
+		expect(errorOutput).toContain("Invalid amount");
+	});
+
+	it("should error on zero amount", async () => {
+		const { runWallet } = await import("./wallet");
+
+		try {
+			await runWallet([
+				"send",
+				"--to",
+				"0x1234567890123456789012345678901234567890",
+				"--amount",
+				"0",
+			]);
+		} catch (_e) {
+			// Expected: process.exit throws
+		}
+
+		expect(consoleErrorSpy).toHaveBeenCalled();
+		const errorOutput = consoleErrorSpy.mock.calls.flat().join(" ");
+		expect(errorOutput).toContain("Invalid amount");
+	});
+});

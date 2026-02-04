@@ -1,14 +1,28 @@
 ---
 name: polymarket-trading
-version: 1.0.0
-description: CLI tool for AI agents to trade on Polymarket prediction markets. Features account creation, deposit management, market discovery, price fetching, and order placement.
+version: 1.1.0
+description: Trade prediction markets on Polymarket with your OpenClaw bot. Market discovery, price data, and automated order execution.
 homepage: https://www.polymarket.com
-metadata: {"category": "trading", "platform": "polymarket", "requires_auth": true}
+documentation: https://docs.polymarket.com
+metadata: 
+  category: trading
+  platform: polymarket
+  requires_auth: true
+  features: ["market-search", "price-feeds", "order-placement", "balance-checking", "portfolio-tracking"]
 ---
 
-# Polymarket Trading Skill
+# Polymarket Trading Skill 📈
 
-Complete CLI tool enabling AI agents to trade prediction markets on Polymarket.
+Trade prediction markets directly from your OpenClaw bot using Clawearn.
+
+## What You Can Do
+
+- 🔍 Search and discover prediction markets
+- 💰 Check your USDC balance and positions
+- 📊 Get real-time prices and order book data
+- 🎯 Place buy/sell orders automatically
+- 📋 Manage your open orders
+- 🤖 Build autonomous trading strategies
 
 ## Skill Files
 

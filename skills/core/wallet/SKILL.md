@@ -1,17 +1,52 @@
-# Wallet Setup Guide 💼
+# Wallet Management Guide 💼
 
-Complete guide to setting up and managing wallets for prediction market trading.
+Complete guide to setting up wallets, managing funds, and sending USDC for prediction market trading.
 
 ---
 
 ## Overview
 
+Your wallet is the gateway to trading on prediction markets. Clawearn handles wallet creation, security, and provides tools to send USDC directly from your wallet to other addresses on Arbitrum.
+
+### What You Can Do
+- ✅ Create new wallets instantly
+- ✅ Send USDC to other addresses
+- ✅ Check balances across markets
+- ✅ Manage multiple wallets securely
+- ✅ Export and backup credentials
+
 
 ---
 
-## Polymarket Wallet Setup
+## Quick Reference
 
-### Option 1: Create New Wallet (Recommended for Agents)
+### Create & Show Your Wallet
+
+```bash
+# Create a new wallet (one-time setup)
+clawearn wallet create
+
+# Display your wallet address anytime
+clawearn wallet show
+```
+
+### Send USDC to Another Address
+
+```bash
+# Send USDC to another Ethereum address on Arbitrum
+clawearn wallet send --to 0x742d35Cc6634C0532925a3b844Bc9e7595f42aED --amount 100
+
+# Verify it worked
+clawearn wallet show
+```
+
+---
+
+## Detailed Setup
+
+### Polymarket Wallet Setup
+
+#### Option 1: Create New Wallet (Recommended for Agents)
 
 ```bash
 # Using the CLI tool
@@ -47,19 +82,96 @@ chmod 600 ~/.config/clawearn/polymarket-key.txt
 
 ### Getting Funds
 
-**Testnet/Development:**
+**Option 1: Send from another wallet (Recommended)**
 ```bash
-# Request pocket money (testnet USDC)
-bun polymarket-cli.ts balance pocket-money --amount 100
+# Send USDC from another address to your wallet
+clawearn wallet send --to YOUR_WALLET_ADDRESS --amount 100
 ```
 
-**Production:**
-1. Bridge USDC to Polygon network
-2. Send to your wallet address
+**Option 2: Deposit from external source**
+1. Bridge USDC to Arbitrum network
+2. Send to your wallet address from `clawearn wallet show`
 3. Verify balance:
 ```bash
-bun polymarket-cli.ts balance check --private-key $POLYMARKET_PRIVATE_KEY
+clawearn polymarket balance check
 ```
+
+---
+
+## Sending USDC (NEW Feature ✨)
+
+### What is `clawearn wallet send`?
+
+Send USDC directly from your wallet to any Ethereum address on Arbitrum network. Perfect for:
+- Funding another agent's wallet
+- Transferring between your own wallets
+- Distributing profits across accounts
+- Consolidating funds
+
+### How to Send USDC
+
+**Basic command:**
+```bash
+clawearn wallet send --to <recipient-address> --amount <amount>
+```
+
+**Example:**
+```bash
+# Send 100 USDC to another address
+clawearn wallet send --to 0x742d35Cc6634C0532925a3b844Bc9e7595f42aED --amount 100
+```
+
+### What Happens
+
+The command will:
+1. ✅ Validate the recipient address format
+2. ✅ Validate the amount (must be positive)
+3. ✅ Check you have enough ETH for gas fees
+4. ✅ Check you have enough USDC for the transfer
+5. ✅ Execute the transfer on Arbitrum
+6. ✅ Wait for confirmation
+7. ✅ Display the transaction hash
+
+### Example Output
+
+```
+Preparing USDC transfer...
+From: 0x9Eb60033E4FdE90839e586DdAE9d9Edef7a5A873
+To:   0x742d35Cc6634C0532925a3b844Bc9e7595f42aED
+Amount: 100 USDC
+
+Sending 100 USDC...
+Transaction sent! Hash: 0x123abc...
+Waiting for confirmation...
+✅ Transfer successful!
+100 USDC sent to 0x742d35Cc6634C0532925a3b844Bc9e7595f42aED
+```
+
+### Requirements
+
+To send USDC, you need:
+- ✅ Existing wallet (created with `clawearn wallet create`)
+- ✅ USDC balance on Arbitrum
+- ✅ Some ETH on Arbitrum for gas fees
+- ✅ Valid recipient Ethereum address
+
+### Common Issues
+
+**"Insufficient USDC balance"**
+- You don't have enough USDC
+- Solution: Deposit more USDC to your wallet
+
+**"Insufficient ETH on Arbitrum for gas fees"**
+- You need ETH to pay transaction fees
+- Solution: Send some ETH to your wallet address
+
+**"Invalid recipient address"**
+- The recipient address format is wrong
+- Must be valid Ethereum address (0x followed by 40 hex characters)
+
+**"Invalid amount"**
+- Amount must be a positive number
+- Can't be zero or negative
 
 ---
 

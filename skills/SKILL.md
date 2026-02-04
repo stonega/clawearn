@@ -1,118 +1,159 @@
 ---
 name: clawearn
-version: 1.0.0
-description: Multi-market prediction trading platform for AI agents. Supports Polymarket, Manifold, Kalshi, and more.
+version: 1.1.0
+description: Modular prediction market trading platform for OpenClaw bots. Trade on Polymarket, manage wallets, transfer USDC, and automate trading strategies.
 homepage: https://clawearn.xyz
-metadata: {"category": "trading", "type": "prediction-markets", "modular": true}
+documentation: https://docs.clawearn.xyz
+repository: https://github.com/stonega/moltearn
+support: https://discord.gg/clawearn
+metadata: 
+  category: trading
+  type: prediction-markets
+  platforms: ["polymarket"]
+  features: ["wallet-management", "market-trading", "usdc-transfers", "multi-market", "modular"]
+  requires: ["bun", "ethers.js"]
 ---
 
-# Moltearn - AI Agent Trading Platform 🎯
+# Clawearn - Modular Trading Platform for OpenClaw 🎯
 
-A modular prediction market trading system for AI agents. Choose which markets to support and install only what you need.
+**Trade prediction markets directly from your OpenClaw bot.**
 
-## Quick Start
+Clawearn enables your AI agent to:
+- 🎯 Trade on Polymarket prediction markets
+- 💼 Create and manage crypto wallets
+- 💸 Send USDC to any Ethereum address on Arbitrum
+- 📊 Monitor balances and positions across markets
+- 🤖 Execute trading strategies autonomously
 
-Install the core wallet setup and your chosen market skills.
+---
+
+## Quick Start (3 steps)
+
+### Step 1: Install clawearn CLI
+
+```bash
+curl -fsSL https://clawearn.xyz/install.sh | bash
+# or: bun link (if in repo)
+```
+
+### Step 2: Create your first wallet
+
+```bash
+clawearn wallet create
+```
+
+You'll see your wallet address. Save it — you'll need to fund it next.
+
+### Step 3: Fund your wallet and start trading
+
+**Option A: Send USDC from another wallet**
+```bash
+clawearn wallet send --to YOUR_AGENT_ADDRESS --amount 100
+```
+
+**Option B: Bridge USDC to Arbitrum yourself**
+- Send USDC to Arbitrum network
+- Send to the address from `clawearn wallet show`
+
+**Then search for markets:**
+```bash
+clawearn polymarket market search --query "bitcoin price 2025"
+```
 
 ---
 
-## Installation
+## Installation for OpenClaw Bots
 
-### Step 1: Install Core Skills (Required)
+### Install all skill files
 
-# Create directory structure
-mkdir -p ~/.clawearn/skills/{core,markets}
-
-# Install main skill file
-curl -s https://clawearn.xyz/skills/SKILL.md > ~/.clawearn/skills/SKILL.md
-curl -s https://clawearn.xyz/skills/HEARTBEAT.md > ~/.clawearn/skills/HEARTBEAT.md
-
-# Install core wallet and security
-curl -s https://clawearn.xyz/skills/core/WALLET.md > ~/.clawearn/skills/core/WALLET.md
-curl -s https://clawearn.xyz/skills/core/SECURITY.md > ~/.clawearn/skills/core/SECURITY.md
-
-### Step 2: Choose Your Markets
-
-mkdir -p ~/.clawearn/skills/markets/polymarket
-curl -s https://clawearn.xyz/skills/markets/polymarket/SKILL.md > ~/.clawearn/skills/markets/polymarket/SKILL.md
-curl -s https://clawearn.xyz/skills/markets/polymarket/HEARTBEAT.md > ~/.clawearn/skills/markets/polymarket/HEARTBEAT.md
-
-#### Option B: Manifold Markets
 ```bash
-mkdir -p ~/.clawearn/skills/markets/manifold
-curl -s http://localhost:3000/skills/markets/manifold/SKILL.md > ~/.clawearn/skills/markets/manifold/SKILL.md
-```
+# Create skill directory
+mkdir -p ~/.openclaw/skills/clawearn
 
-#### Option C: Kalshi
-```bash
-mkdir -p ~/.clawearn/skills/markets/kalshi
-curl -s http://localhost:3000/skills/markets/kalshi/SKILL.md > ~/.clawearn/skills/markets/kalshi/SKILL.md
-```
+# Install main files
+curl -s https://clawearn.xyz/skills/SKILL.md > ~/.openclaw/skills/clawearn/SKILL.md
+curl -s https://clawearn.xyz/skills/HEARTBEAT.md > ~/.openclaw/skills/clawearn/HEARTBEAT.md
 
-#### Option D: Install All Markets
-```bash
-# Install all available market integrations
-for market in polymarket manifold kalshi; do
-  mkdir -p ~/.clawearn/skills/markets/$market
-  curl -s http://localhost:3000/skills/markets/$market/SKILL.md > ~/.clawearn/skills/markets/$market/SKILL.md
-done
-```
+# Install core skills
+mkdir -p ~/.openclaw/skills/clawearn/core/{wallet,security}
+curl -s https://clawearn.xyz/skills/core/wallet/SKILL.md > ~/.openclaw/skills/clawearn/core/wallet/SKILL.md
+curl -s https://clawearn.xyz/skills/core/security/SKILL.md > ~/.openclaw/skills/clawearn/core/security/SKILL.md
 
----
+# Install market skills
+mkdir -p ~/.openclaw/skills/clawearn/markets/polymarket
+curl -s https://clawearn.xyz/skills/markets/polymarket/SKILL.md > ~/.openclaw/skills/clawearn/markets/polymarket/SKILL.md
+curl -s https://clawearn.xyz/skills/markets/polymarket/HEARTBEAT.md > ~/.openclaw/skills/clawearn/markets/polymarket/HEARTBEAT.md
+```
 
 ## Supported Markets
 
 | Market | Status | Features | Installation |
 |--------|--------|----------|--------------|
 | **Polymarket** | ✅ Production | Full trading, order management, market discovery | See above |
-| **Manifold** | 🚧 Coming Soon | Play money markets, community trading | See above |
-| **Kalshi** | 🚧 Coming Soon | Regulated event contracts | See above |
-| **Metaculus** | 📋 Planned | Forecasting platform | TBD |
-| **PredictIt** | 📋 Planned | Political markets | TBD |
 
 ---
 
-## Market Selection Guide
 
-### Choose Polymarket if:
-- ✅ You want real-money trading with crypto
-- ✅ You need high liquidity markets
-- ✅ You're interested in crypto, politics, sports
-- ✅ You're comfortable with web3/wallets
+## Core Commands
 
-### Choose Manifold if:
-- ✅ You want to practice with play money
-- ✅ You want to create custom markets
-- ✅ You prefer a simpler, social experience
-- ✅ You want to experiment without financial risk
+### Wallet Management
 
-### Choose Kalshi if:
-- ✅ You want regulated, legal US markets
-- ✅ You prefer traditional finance integration
-- ✅ You need compliance and oversight
-- ✅ You trade economic/weather events
+```bash
+# Create a new wallet
+clawearn wallet create
 
----
+# Show your wallet address
+clawearn wallet show
+
+# Send USDC to another address (on Arbitrum)
+clawearn wallet send --to 0x... --amount 100
+```
+
+### Polymarket Trading
+
+```bash
+# Search for markets
+clawearn polymarket market search --query "bitcoin price 2025"
+
+# Get market details
+clawearn polymarket market info --market-id MARKET_ID
+
+# Check your balance
+clawearn polymarket balance check
+
+# Place a buy order
+clawearn polymarket order buy --token-id TOKEN_ID --price 0.50 --size 10
+
+# View open orders
+clawearn polymarket order list-open
+
+# Cancel an order
+clawearn polymarket order cancel --order-id ORDER_ID
+```
 
 ## Configuration
 
-Create a config file to track which markets you've enabled:
+Create an optional config file to track settings:
 
-**`~/.clawearn/config.json`**
+**`~/.clawearn/config.json`** (optional)
 ```json
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "enabled_markets": ["polymarket"],
-  "credentials": {
-    "polymarket": {
-      "private_key_path": "~/.config/clawearn/polymarket-key.txt",
-      "signature_type": 0
-    }
+  "default_network": "arbitrum",
+  "wallet": {
+    "network": "arbitrum",
+    "auto_fund_threshold": 50
+  },
+  "trading": {
+    "signature_type": 0,
+    "default_slippage_pct": 0.5
   },
   "risk_limits": {
     "max_position_size_pct": 20,
     "max_total_exposure_pct": 50,
-    "min_balance_alert": 10
+    "min_balance_alert": 10,
+    "daily_loss_limit": 100
   }
 }
 ```
@@ -170,65 +211,10 @@ curl -s http://localhost:3000/skills/markets/NEW_MARKET/SKILL.md > ~/.clawearn/s
 
 ---
 
-## Development Roadmap
-
-### ✅ Phase 1 (Current)
-- Core wallet management
-- Polymarket integration
-- Basic trading functionality
-
-### 🚧 Phase 2 (In Progress)
-- Manifold Markets integration
-- Kalshi integration
-- Cross-market arbitrage detection
-
-### 📋 Phase 3 (Planned)
-- Portfolio management across markets
-- Advanced risk analytics
-- Automated market making
-- Social trading features
-
----
-
-## API Endpoints
-
-All skills are served from:
-```
-http://localhost:3000/skills/
-```
-
-**Core files:**
-- `/skills/SKILL.md` - This file
-- `/skills/HEARTBEAT.md` - Heartbeat routine
-- `/skills/core/WALLET.md` - Wallet setup
-- `/skills/core/SECURITY.md` - Security guide
-
-**Market files:**
-- `/skills/markets/{market}/SKILL.md` - Market skill
-- `/skills/markets/{market}/HEARTBEAT.md` - Market heartbeat
-- `/skills/markets/{market}/README.md` - Detailed docs
-- `/skills/markets/{market}/SETUP.md` - Setup guide
-
----
-
-## Contributing
-
-Want to add support for a new market?
-
-1. Create a new folder: `skills/markets/YOUR_MARKET/`
-2. Add `SKILL.md` with the market's API documentation
-3. Add `SETUP.md` with installation instructions
-4. Add `HEARTBEAT.md` with monitoring routines
-5. Update this file to list the new market
-
----
-
 **Check for updates:** Re-fetch this file anytime to see newly supported markets!
 
 ```bash
 curl -s https://clawearn.xyz/skills/SKILL.md | grep '^version:'
 ```
-
----
 
 **Ready to start?** Install the core skills, choose your markets, and begin trading! 🚀

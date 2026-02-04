@@ -1,10 +1,19 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { Wallet } from "ethers";
+import { ethers, Wallet } from "ethers";
 
 const WALLET_DIR = path.join(os.homedir(), ".config", "clawearn");
 const WALLET_FILE = path.join(WALLET_DIR, "wallet.json");
+const ARBITRUM_RPC = "https://arb1.arbitrum.io/rpc";
+const USDC_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // Native USDC on Arbitrum
+const USDC_DECIMALS = 6;
+
+const USDC_ABI = [
+	"function balanceOf(address owner) view returns (uint256)",
+	"function decimals() view returns (uint8)",
+	"function transfer(address to, uint256 amount) returns (bool)",
+];
 
 interface WalletConfig {
 	address: string;
@@ -31,6 +40,9 @@ export async function runWallet(args: string[]) {
 		case "show":
 		case "address":
 			await showAddress();
+			break;
+		case "send":
+			await handleSend(args);
 			break;
 		case "help":
 		case "--help":
@@ -147,6 +159,91 @@ async function showAddress() {
 	);
 }
 
+async function handleSend(args: string[]) {
+	const to = getArg(args, "--to");
+	const amount = getArg(args, "--amount");
+
+	if (!to || !amount) {
+		console.error("Usage: clawearn wallet send --to <address> --amount <amount>");
+		console.error("\nOptions:");
+		console.error("  --to <address>      Recipient address");
+		console.error("  --amount <amount>   Amount of USDC to send");
+		process.exit(1);
+	}
+
+	// Validate recipient address
+	if (!ethers.utils.isAddress(to)) {
+		console.error(`❌ Invalid recipient address: ${to}`);
+		process.exit(1);
+	}
+
+	// Validate amount
+	const amountNum = parseFloat(amount);
+	if (isNaN(amountNum) || amountNum <= 0) {
+		console.error(`❌ Invalid amount: ${amount}`);
+		process.exit(1);
+	}
+
+	const wallet = loadWallet();
+	if (!wallet) {
+		console.error("❌ No wallet found. Create one first:");
+		console.log("   clawearn wallet create");
+		process.exit(1);
+	}
+
+	try {
+		const provider = new ethers.providers.JsonRpcProvider(ARBITRUM_RPC);
+		const signer = new Wallet(wallet.privateKey, provider);
+
+		console.log("Preparing USDC transfer...");
+		console.log(`From: ${signer.address}`);
+		console.log(`To:   ${to}`);
+		console.log(`Amount: ${amount} USDC`);
+
+		// Check ETH balance for gas
+		const ethBalance = await signer.getBalance();
+		if (ethBalance.eq(0)) {
+			console.error("❌ Insufficient ETH on Arbitrum for gas fees");
+			console.log("Please send some ETH to your wallet for gas.");
+			process.exit(1);
+		}
+
+		// Create USDC contract interface
+		const usdcContract = new ethers.Contract(USDC_ADDRESS, USDC_ABI, signer);
+
+		// Check USDC balance
+		const balance = await usdcContract.balanceOf(signer.address);
+		const balanceFormatted = ethers.utils.formatUnits(balance, USDC_DECIMALS);
+		const parsedAmount = ethers.utils.parseUnits(amount, USDC_DECIMALS);
+
+		if (balance.lt(parsedAmount)) {
+			console.error(
+				`❌ Insufficient USDC balance on Arbitrum`,
+			);
+			console.error(`   Required: ${amount}`);
+			console.error(
+				`   Available: ${balanceFormatted}`,
+			);
+			process.exit(1);
+		}
+
+		console.log(`\nSending ${amount} USDC...`);
+
+		const tx = await usdcContract.transfer(to, parsedAmount);
+		console.log(`Transaction sent! Hash: ${tx.hash}`);
+		console.log("Waiting for confirmation...");
+
+		await tx.wait();
+		console.log("✅ Transfer successful!");
+		console.log(`${amount} USDC sent to ${to}`);
+	} catch (error) {
+		console.error(
+			"Failed to send USDC:",
+			error instanceof Error ? error.message : error,
+		);
+		process.exit(1);
+	}
+}
 
 function loadWallet(): WalletConfig | null {
 	if (!fs.existsSync(WALLET_FILE)) {
@@ -189,12 +286,19 @@ COMMANDS:
 
   show, address   Display your wallet address (safe to share)
 
+  send            Send USDC to another address (Arbitrum)
+    --to <addr>        Recipient address
+    --amount <amount>  Amount of USDC to send
+
 EXAMPLES:
   # Create a new wallet
   clawearn wallet create
 
   # Show your wallet address (for receiving funds)
   clawearn wallet show
+
+  # Send USDC to another address
+  clawearn wallet send --to 0x1234... --amount 100
 
 SECURITY:
   • Your private key is stored at: ${WALLET_FILE}
