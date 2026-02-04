@@ -1,5 +1,16 @@
 import { ethers, Wallet } from "ethers";
 import { getStoredPrivateKey } from "./wallet";
+import {
+	getPrice,
+	validateSymbol,
+	formatPrice,
+	calculateLiquidationPrice,
+	calculatePnL,
+	isNearLiquidation,
+	getSymbols,
+} from "./hyperliquid-api";
+import { validateOrder, getOpenOrders, getPortfolio, placeOrder } from "./hyperliquid-exchange";
+import type { SignatureComponents } from "./hyperliquid-signing";
 
 const HYPERLIQUID_RPC = "https://api.hyperliquid.xyz";
 const ARBITRUM_RPC = "https://arb1.arbitrum.io/rpc";
@@ -285,22 +296,34 @@ async function handlePrice(args: string[]) {
 		console.error("  ETH-USD   Ethereum");
 		console.error("  SOL-USD   Solana");
 		console.error("  ARB-USD   Arbitrum");
+		console.error("  DOGE-USD  Dogecoin");
+		console.error("\nOr list all symbols with:");
+		console.error("  clawearn hyperliquid symbols");
 		process.exit(1);
 	}
 
 	try {
 		console.log(`Fetching price for ${symbol}...`);
 
-		// In Phase 3, this would fetch from Hyperliquid API
-		// For now, show placeholder
+		// Validate symbol first
+		const isValid = await validateSymbol(symbol);
+		if (!isValid) {
+			console.error(`❌ Symbol not found: ${symbol}`);
+			console.log(`\nRun 'clawearn hyperliquid symbols' to see all available symbols`);
+			process.exit(1);
+		}
+
+		const priceData = await getPrice(symbol);
+
 		console.log(`\n═══════════════════════════════════════════════════════════════`);
 		console.log(`                     ${symbol} PRICE                     `);
 		console.log(`═══════════════════════════════════════════════════════════════`);
-		console.log(`\nSymbol: ${symbol}`);
-		console.log(
-			`\n📊 Price data coming soon (Phase 3 - Hyperliquid API integration)`,
-		);
-		console.log(`\nFor now, check prices at: https://hyperliquid.gitbook.io`);
+		console.log(`\nSymbol:   ${symbol}`);
+		console.log(`Price:    $${formatPrice(priceData.price)}`);
+		console.log(`Bid:      $${formatPrice(priceData.bid)}`);
+		console.log(`Ask:      $${formatPrice(priceData.ask)}`);
+		console.log(`Spread:   $${formatPrice(priceData.ask - priceData.bid)}`);
+		console.log(`\nTimestamp: ${new Date(priceData.timestamp).toISOString()}`);
 		console.log(`═══════════════════════════════════════════════════════════════\n`);
 	} catch (error) {
 		console.error(
@@ -369,6 +392,42 @@ async function handleOrder(args: string[]) {
 
 		try {
 			const signer = new Wallet(privateKey);
+
+			// Unified order validation using exchange helper
+			const validationError = validateOrder({
+				symbol,
+				side: subcommand as "buy" | "sell",
+				size,
+				price,
+				leverage,
+				timeInForce: "Gtc",
+			});
+
+			if (validationError) {
+				console.error(`❌ Order validation failed: ${validationError}`);
+				process.exit(1);
+			}
+
+			// Validate symbol with API
+			const isValid = await validateSymbol(symbol);
+			if (!isValid) {
+				console.error(`❌ Symbol not found: ${symbol}`);
+				process.exit(1);
+			}
+
+			// Get current price to calculate liquidation price
+			const priceData = await getPrice(symbol);
+			const liquidationPrice = calculateLiquidationPrice(
+				price,
+				leverage,
+				subcommand === "buy" ? "long" : "short",
+			);
+			const isNearLiq = isNearLiquidation(
+				priceData.price,
+				liquidationPrice,
+				leverage,
+			);
+
 			console.log(`Preparing ${subcommand.toUpperCase()} order...`);
 			console.log(`\n═══════════════════════════════════════════════════════════════`);
 			console.log(`                      ORDER DETAILS                        `);
@@ -376,12 +435,34 @@ async function handleOrder(args: string[]) {
 			console.log(`\nSymbol:   ${symbol}`);
 			console.log(`Side:     ${subcommand.toUpperCase()}`);
 			console.log(`Size:     ${size}`);
-			console.log(`Price:    ${price}`);
+			console.log(`Price:    $${price}`);
 			console.log(`Leverage: ${leverage}x`);
 			console.log(`Wallet:   ${signer.address}`);
+
+			if (leverage > 1) {
+				console.log(`\n📊 RISK ANALYSIS:`);
+				console.log(
+					`   Entry Price:        $${formatPrice(price)}`,
+				);
+				console.log(
+					`   Current Price:       $${formatPrice(priceData.price)}`,
+				);
+				console.log(
+					`   Liquidation Price:   $${formatPrice(liquidationPrice)}`,
+				);
+				console.log(
+					`   Distance to Liquidation: ${formatPrice(Math.abs(priceData.price - liquidationPrice))}`,
+				);
+				if (isNearLiq) {
+					console.warn(`   ⚠️  DANGER: Price is near liquidation threshold!`);
+				}
+			}
+
 			console.log(`\n═══════════════════════════════════════════════════════════════`);
-			console.log(`\n📊 Order placement coming soon (Phase 3 - Hyperliquid API)`);
-			console.log(`   This will execute the order on Hyperliquid exchange.\n`);
+			console.log(
+				`\n✅ Order validation complete. Price data validated.`,
+			);
+			console.log(`\n⏳ Order placement implementation coming next.\n`);
 		} catch (error) {
 			console.error(
 				"Failed to place order:",
