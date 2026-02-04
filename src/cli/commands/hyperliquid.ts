@@ -35,6 +35,15 @@ export async function runHyperliquid(args: string[]) {
 		case "deposit":
 			await handleDeposit(args);
 			break;
+		case "price":
+			await handlePrice(args);
+			break;
+		case "order":
+			await handleOrder(args);
+			break;
+		case "position":
+			await handlePosition(args);
+			break;
 		case "help":
 		case "--help":
 		case "-h":
@@ -264,6 +273,207 @@ async function handleDeposit(args: string[]) {
 	}
 }
 
+async function handlePrice(args: string[]) {
+	const symbol = getArg(args, "--symbol");
+
+	if (!symbol) {
+		console.error(
+			"Usage: clawearn hyperliquid price --symbol <symbol>",
+		);
+		console.error("\nCommon symbols:");
+		console.error("  BTC-USD   Bitcoin");
+		console.error("  ETH-USD   Ethereum");
+		console.error("  SOL-USD   Solana");
+		console.error("  ARB-USD   Arbitrum");
+		process.exit(1);
+	}
+
+	try {
+		console.log(`Fetching price for ${symbol}...`);
+
+		// In Phase 3, this would fetch from Hyperliquid API
+		// For now, show placeholder
+		console.log(`\n═══════════════════════════════════════════════════════════════`);
+		console.log(`                     ${symbol} PRICE                     `);
+		console.log(`═══════════════════════════════════════════════════════════════`);
+		console.log(`\nSymbol: ${symbol}`);
+		console.log(
+			`\n📊 Price data coming soon (Phase 3 - Hyperliquid API integration)`,
+		);
+		console.log(`\nFor now, check prices at: https://hyperliquid.gitbook.io`);
+		console.log(`═══════════════════════════════════════════════════════════════\n`);
+	} catch (error) {
+		console.error(
+			"Failed to fetch price:",
+			error instanceof Error ? error.message : error,
+		);
+		process.exit(1);
+	}
+}
+
+async function handleOrder(args: string[]) {
+	const subcommand = args[1];
+
+	if (!subcommand) {
+		console.error("Usage: clawearn hyperliquid order [buy|sell|list|cancel]");
+		process.exit(1);
+	}
+
+	const privateKey = requirePrivateKey("hyperliquid order");
+
+	if (subcommand === "buy" || subcommand === "sell") {
+		const symbol = getArg(args, "--symbol");
+		const sizeStr = getArg(args, "--size");
+		const priceStr = getArg(args, "--price");
+		const leverageStr = getArg(args, "--leverage") || "1";
+
+		if (!symbol || !sizeStr || !priceStr) {
+			console.error(
+				`Usage: clawearn hyperliquid order ${subcommand} --symbol <symbol> --size <size> --price <price> [--leverage <leverage>]`,
+			);
+			process.exit(1);
+		}
+
+		// Validate inputs
+		const size = parseFloat(sizeStr);
+		const price = parseFloat(priceStr);
+		const leverage = parseFloat(leverageStr);
+
+		if (isNaN(size) || size <= 0) {
+			console.error(`❌ Invalid size: ${sizeStr}`);
+			process.exit(1);
+		}
+
+		if (isNaN(price) || price <= 0) {
+			console.error(`❌ Invalid price: ${priceStr}`);
+			process.exit(1);
+		}
+
+		if (isNaN(leverage) || leverage < 1 || leverage > 20) {
+			console.error(
+				`❌ Invalid leverage: ${leverageStr} (must be 1-20x)`,
+			);
+			process.exit(1);
+		}
+
+		if (leverage > 1) {
+			console.warn(
+				`\n⚠️  WARNING: You're using ${leverage}x leverage!`,
+			);
+			console.warn(`   This means LIQUIDATION RISK!`);
+			console.warn(`   Position can be liquidated if price moves against you.`);
+			console.warn(
+				`   Make sure you understand the risks before continuing.\n`,
+			);
+		}
+
+		try {
+			const signer = new Wallet(privateKey);
+			console.log(`Preparing ${subcommand.toUpperCase()} order...`);
+			console.log(`\n═══════════════════════════════════════════════════════════════`);
+			console.log(`                      ORDER DETAILS                        `);
+			console.log(`═══════════════════════════════════════════════════════════════`);
+			console.log(`\nSymbol:   ${symbol}`);
+			console.log(`Side:     ${subcommand.toUpperCase()}`);
+			console.log(`Size:     ${size}`);
+			console.log(`Price:    ${price}`);
+			console.log(`Leverage: ${leverage}x`);
+			console.log(`Wallet:   ${signer.address}`);
+			console.log(`\n═══════════════════════════════════════════════════════════════`);
+			console.log(`\n📊 Order placement coming soon (Phase 3 - Hyperliquid API)`);
+			console.log(`   This will execute the order on Hyperliquid exchange.\n`);
+		} catch (error) {
+			console.error(
+				"Failed to place order:",
+				error instanceof Error ? error.message : error,
+			);
+			process.exit(1);
+		}
+	} else if (subcommand === "list") {
+		try {
+			const signer = new Wallet(privateKey);
+			console.log(`Fetching open orders for ${signer.address}...\n`);
+			console.log(`═══════════════════════════════════════════════════════════════`);
+			console.log(`                      OPEN ORDERS                        `);
+			console.log(`═══════════════════════════════════════════════════════════════`);
+			console.log(`\n📊 Order list coming soon (Phase 3 - Hyperliquid API)`);
+			console.log(`═══════════════════════════════════════════════════════════════\n`);
+		} catch (error) {
+			console.error(
+				"Failed to list orders:",
+				error instanceof Error ? error.message : error,
+			);
+			process.exit(1);
+		}
+	} else if (subcommand === "cancel") {
+		const orderId = getArg(args, "--order-id");
+
+		if (!orderId) {
+			console.error("Usage: clawearn hyperliquid order cancel --order-id <id>");
+			process.exit(1);
+		}
+
+		console.log(`Cancelling order ${orderId}...`);
+		console.log(`\n📊 Order cancellation coming soon (Phase 3 - Hyperliquid API)\n`);
+	} else {
+		console.error("Usage: clawearn hyperliquid order [buy|sell|list|cancel]");
+		process.exit(1);
+	}
+}
+
+async function handlePosition(args: string[]) {
+	const subcommand = args[1];
+
+	if (!subcommand) {
+		console.error("Usage: clawearn hyperliquid position [list|close]");
+		process.exit(1);
+	}
+
+	const privateKey = requirePrivateKey("hyperliquid position");
+
+	if (subcommand === "list") {
+		try {
+			const signer = new Wallet(privateKey);
+			console.log(`Fetching positions for ${signer.address}...\n`);
+			console.log(`═══════════════════════════════════════════════════════════════`);
+			console.log(`                      OPEN POSITIONS                        `);
+			console.log(`═══════════════════════════════════════════════════════════════`);
+			console.log(`\n📊 Position list coming soon (Phase 3 - Hyperliquid API)`);
+			console.log(`═══════════════════════════════════════════════════════════════\n`);
+		} catch (error) {
+			console.error(
+				"Failed to list positions:",
+				error instanceof Error ? error.message : error,
+			);
+			process.exit(1);
+		}
+	} else if (subcommand === "close") {
+		const symbol = getArg(args, "--symbol");
+
+		if (!symbol) {
+			console.error("Usage: clawearn hyperliquid position close --symbol <symbol>");
+			process.exit(1);
+		}
+
+		try {
+			const signer = new Wallet(privateKey);
+			console.log(`Closing position for ${symbol}...\n`);
+			console.log(`Wallet: ${signer.address}`);
+			console.log(`Symbol: ${symbol}`);
+			console.log(`\n📊 Position close coming soon (Phase 3 - Hyperliquid API)\n`);
+		} catch (error) {
+			console.error(
+				"Failed to close position:",
+				error instanceof Error ? error.message : error,
+			);
+			process.exit(1);
+		}
+	} else {
+		console.error("Usage: clawearn hyperliquid position [list|close]");
+		process.exit(1);
+	}
+}
+
 function showHyperliquidHelp() {
 	console.log(`
 Hyperliquid Trading Commands
@@ -301,6 +511,34 @@ DEPOSIT COMMANDS:
   deposit              Deposit USDC to Hyperliquid
     --amount <amount>  Amount of USDC to deposit (minimum: 10)
 
+PRICE COMMANDS:
+  price                Get current market price
+    --symbol <symbol>  Symbol to get price for (e.g., BTC-USD, ETH-USD)
+
+ORDER COMMANDS:
+  order buy            Place a buy order
+    --symbol <symbol>  Trading symbol
+    --size <size>      Position size
+    --price <price>    Order price
+    --leverage <lev>   Leverage (1-20x, default: 1x)
+
+  order sell           Place a sell order
+    --symbol <symbol>  Trading symbol
+    --size <size>      Position size
+    --price <price>    Order price
+    --leverage <lev>   Leverage (1-20x, default: 1x)
+
+  order list           List all open orders
+
+  order cancel         Cancel an order
+    --order-id <id>    Order ID to cancel
+
+POSITION COMMANDS:
+  position list        List all open positions
+
+  position close       Close a position
+    --symbol <symbol>  Symbol to close
+
 EXAMPLES:
   # Show account info
   clawearn hyperliquid account
@@ -308,14 +546,23 @@ EXAMPLES:
   # Check USDC balance
   clawearn hyperliquid balance check
 
-  # Deposit USDC to Hyperliquid
+  # Deposit USDC
   clawearn hyperliquid deposit --amount 100
 
-TRADING COMING SOON (Phase 3):
-  # Place orders
-  # Get market prices
-  # Manage positions
-  # Close positions
+  # Get BTC price
+  clawearn hyperliquid price --symbol BTC-USD
+
+  # Place 1x leverage buy order (safe)
+  clawearn hyperliquid order buy \\
+    --symbol BTC-USD \\
+    --size 0.1 \\
+    --price 50000
+
+  # List open positions
+  clawearn hyperliquid position list
+
+  # Close a position
+  clawearn hyperliquid position close --symbol BTC-USD
 
 DOCUMENTATION:
   Read skills/markets/hyperliquid/SKILL.md for full guide
