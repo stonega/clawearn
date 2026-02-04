@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 
+import { runHyperliquid } from "./commands/hyperliquid";
 import { runPolymarket } from "./commands/polymarket";
 import { runWallet } from "./commands/wallet";
 
@@ -22,6 +23,10 @@ async function main() {
 			case "polymarket":
 			case "poly":
 				await runPolymarket(Bun.argv.slice(3));
+				break;
+			case "hyperliquid":
+			case "hl":
+				await runHyperliquid(Bun.argv.slice(3));
 				break;
 			case "version":
 			case "--version":
@@ -53,6 +58,7 @@ Usage: clawearn <command> [subcommand] [options]
 COMMANDS:
   wallet              Wallet management (create, show, send)
   polymarket, poly    Polymarket trading commands
+  hyperliquid, hl     Hyperliquid perpetual futures (NEW)
   version, -v         Show version
   help, -h            Show this help
 
