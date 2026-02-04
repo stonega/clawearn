@@ -15,6 +15,77 @@ Your wallet is the gateway to trading on prediction markets. Clawearn handles wa
 - ✅ Manage multiple wallets securely
 - ✅ Export and backup credentials
 
+---
+
+## ⚠️ Financial Common Sense - READ FIRST
+
+### Money is Serious 💰
+
+**Your wallet holds real money.** USDC is a real stablecoin backed by actual US dollars. Every transaction is permanent and cannot be undone.
+
+### Spend Carefully
+
+1. **Start small** - Don't dump all your money into trading at once
+2. **Test first** - Use small amounts to test your strategy
+3. **Risk only what you can afford to lose** - Prediction markets have real losses
+4. **Never trade scared** - If you can't afford to lose it, don't trade it
+5. **Keep reserves** - Always maintain cash reserves for opportunities
+
+### The More Money, The Better (But Be Careful)
+
+**Yes, more capital helps:**
+- ✅ Larger positions = more profit potential
+- ✅ Better diversification across markets
+- ✅ Room to average down on losses
+- ✅ Can take advantage of larger opportunities
+
+**BUT:**
+- ⚠️ More money also means more loss potential
+- ⚠️ Position sizing matters more with large balances
+- ⚠️ Risk management becomes critical
+- ⚠️ One bad trade can hurt more
+
+### Golden Rules
+
+```
+1. Never trade with emotion
+2. Start with 10% of your capital
+3. Test your strategy for 2 weeks minimum
+4. If you're up 20%, consider taking profits
+5. If you're down 10%, re-evaluate your strategy
+6. The goal is consistent small wins, not home runs
+7. Keep emergency reserves (never use 100% of funds)
+8. Document every trade (learn from mistakes)
+```
+
+### Size Your Position
+
+```
+Trading Capital: $1000
+- Max per trade: $100 (10%)
+- Max total open: $300 (30%)
+- Cash reserve: $400 (40%)
+- Testing/learning: $200 (20%)
+```
+
+### Common Mistakes to Avoid
+
+❌ **Rookie mistakes:**
+- Depositing your entire life savings
+- Trading with leverage you don't understand
+- Following emotion instead of strategy
+- Not diversifying across markets
+- Ignoring losses (hoping they'll recover)
+
+✅ **Smart moves:**
+- Start with small test trades
+- Only add more capital after proven profits
+- Diversify across multiple markets
+- Set stop-loss limits
+- Track all trades for learning
+
+---
+
 
 ---
 
@@ -433,9 +504,167 @@ bun polymarket-cli.ts balance pocket-money --amount 100
 
 ---
 
+## Money Management Strategy
+
+### The Reality of Trading
+
+**Prediction markets are REAL MONEY.** You can win or lose actual USDC. Here's how to manage it wisely:
+
+### Phase 1: Testing (Weeks 1-4)
+
+**Budget:** Start with 5-10% of your total capital
+```
+If you have: $1000
+Test with:   $50-100
+Goal:        Learn and validate your strategy
+```
+
+**Rules:**
+- ✅ Use small position sizes ($5-10 per trade)
+- ✅ Trade slowly and deliberately
+- ✅ Document every trade
+- ✅ Don't rush to win big
+- ❌ Don't increase position size yet
+
+### Phase 2: Validation (Weeks 5-8)
+
+**After 2+ weeks of profitable testing:**
+```
+If test profits:     +20% → move to Phase 2
+If test losses:     -10% → re-think strategy, don't proceed
+```
+
+**Budget:** Increase to 20-30% of capital
+```
+If you have: $1000 (proven +$10 profit testing)
+Trade with:  $200-300
+Position:    $20-30 per trade
+```
+
+### Phase 3: Scale (Week 9+)
+
+**Only if Phase 2 was profitable for 4+ weeks:**
+```
+If validated profits: Can use up to 50% of capital
+Never use:           More than 50% at once
+Always keep:         50% in emergency reserves
+```
+
+### Capital Growth Timeline
+
+```
+Week 1:     $1000 → Test with $50
+Week 4:     +$10 profit (20% on test) → Allocate $200
+Week 8:     +$40 profit (20% on validation) → Allocate $500
+Month 3:    +$100 profit → Can grow to $1500+ portfolio
+Month 6:    Consistent profits → Scale further
+
+PATIENCE = PROFIT
+```
+
+### Why More Money Helps (But Careful)
+
+**More capital benefits:**
+- 📈 Better diversification (5 positions vs 1)
+- 📈 Can handle losses better (one loss doesn't destroy you)
+- 📈 Larger profits with same win rate
+- 📈 Can take larger opportunities
+
+**More capital risks:**
+- ⚠️ Larger absolute losses (lose $100 instead of $10)
+- ⚠️ Temptation to over-leverage
+- ⚠️ More positions to manage
+- ⚠️ Easier to make big mistakes
+
+### Daily Loss Limit
+
+**Always set a daily loss limit:**
+```
+Capital: $1000
+Daily limit: $20 (2% of capital)
+
+If you lose $20 in a day: STOP TRADING
+Review your strategy before continuing
+```
+
+### Never Do This
+
+❌ **Deadly mistakes:**
+- Don't FOMO (Fear Of Missing Out)
+- Don't revenge trade (trying to win back losses)
+- Don't over-leverage
+- Don't trade stressed/emotional
+- Don't ignore losses
+- Don't compound all your profits
+- Don't risk rent/food money
+
+### Weekly Review
+
+**Every Sunday, review:**
+```
+1. Total profit/loss this week
+2. Number of winning trades
+3. Average win size vs loss size
+4. Did I follow my strategy?
+5. What did I learn?
+6. Should I adjust position sizing?
+```
+
+### Emergency Fund
+
+**Separate your money:**
+```
+Total Capital: $5000
+
+50% - Active Trading: $2500
+30% - Growth Reserve: $1500
+20% - Emergency Fund: $1000
+```
+
+Never dip into emergency fund for trading.
+
+### Signs You're Ready to Increase Capital
+
+✅ You can answer YES to all:
+- [ ] 4+ weeks of consistent small profits
+- [ ] Win rate above 50%
+- [ ] Never had emotional trades
+- [ ] Stick to position sizing
+- [ ] Document all trades
+- [ ] No daily losses > 2%
+- [ ] Have emergency fund intact
+
+### Signs You Should REDUCE Capital
+
+🔴 Stop trading and reduce if:
+- [ ] 3+ consecutive losing days
+- [ ] Daily losses exceed 5%
+- [ ] You feel stressed/emotional
+- [ ] You're revenge trading
+- [ ] Your win rate drops below 40%
+
+---
+
+## Money Wisdom Summary
+
+| Mistake | Cost | Fix |
+|---------|------|-----|
+| Start with 100% capital | Lose everything | Start with 10% |
+| Trade emotional | Lose 30% in one trade | Follow system |
+| Ignore losses | Compound losses | Set daily stop |
+| Over-leverage | Liquidation | Keep position size <10% |
+| No documentation | Repeat mistakes | Track every trade |
+
+**Remember:** The goal isn't to get rich quick. It's to build wealth slowly and consistently. 🎯
+
+---
+
 **Next Steps:**
 1. ✅ Set up your wallet(s)
 2. ✅ Secure your private keys
-3. ✅ Fund your account(s)
-4. 📖 Read the market-specific SKILL.md files
-5. 🚀 Start trading!
+3. ✅ Fund your account(s) - START SMALL
+4. ✅ Follow the phased approach (Test → Validate → Scale)
+5. 📖 Read the market-specific SKILL.md files
+6. 🚀 Start testing with small amounts
+7. 📊 Track your trades and profits
+8. 💰 Scale responsibly once proven
