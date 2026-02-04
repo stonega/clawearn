@@ -4,6 +4,14 @@ import { getStoredPrivateKey } from "./wallet";
 const HYPERLIQUID_RPC = "https://api.hyperliquid.xyz";
 const ARBITRUM_RPC = "https://arb1.arbitrum.io/rpc";
 const USDC_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // Native USDC on Arbitrum
+const HYPERLIQUID_VAULT = "0x1356c899D8C9467c75A39b583fA6F63b6f72eAEC"; // Hyperliquid vault address on Arbitrum
+const USDC_DECIMALS = 6;
+const USDC_ABI = [
+	"function balanceOf(address owner) view returns (uint256)",
+	"function decimals() view returns (uint8)",
+	"function approve(address spender, uint256 amount) returns (bool)",
+	"function transfer(address to, uint256 amount) returns (bool)",
+];
 
 /**
  * Run hyperliquid subcommand
@@ -23,6 +31,9 @@ export async function runHyperliquid(args: string[]) {
 			break;
 		case "balance":
 			await handleBalance(args);
+			break;
+		case "deposit":
+			await handleDeposit(args);
 			break;
 		case "help":
 		case "--help":
@@ -162,13 +173,93 @@ async function handleBalance(args: string[]) {
 			);
 			process.exit(1);
 		}
-	} else if (subcommand === "deposit") {
-		console.error(
-			"❌ Deposit command coming soon! (Phase 2)\nFor now, send USDC directly to your wallet address.",
-		);
-		process.exit(1);
 	} else {
-		console.error("Usage: clawearn hyperliquid balance [check|deposit]");
+		console.error("Usage: clawearn hyperliquid balance [check]");
+		process.exit(1);
+	}
+}
+
+async function handleDeposit(args: string[]) {
+	const amountStr = getArg(args, "--amount");
+
+	if (!amountStr) {
+		console.error("Usage: clawearn hyperliquid deposit --amount <amount>");
+		console.error("\nOptions:");
+		console.error("  --amount <amount>  Amount of USDC to deposit");
+		process.exit(1);
+	}
+
+	// Validate amount
+	const amount = parseFloat(amountStr);
+	if (isNaN(amount) || amount <= 0) {
+		console.error(`❌ Invalid amount: ${amountStr}`);
+		process.exit(1);
+	}
+
+	// Validate minimum deposit
+	if (amount < 10) {
+		console.error(`❌ Minimum deposit is 10 USDC`);
+		process.exit(1);
+	}
+
+	const privateKey = requirePrivateKey("hyperliquid deposit");
+
+	try {
+		const provider = new ethers.providers.JsonRpcProvider(ARBITRUM_RPC);
+		const signer = new Wallet(privateKey, provider);
+		const usdcContract = new ethers.Contract(
+			USDC_ADDRESS,
+			USDC_ABI,
+			signer,
+		);
+
+		console.log("Preparing USDC deposit to Hyperliquid...");
+		console.log(`From: ${signer.address}`);
+		console.log(`Amount: ${amount} USDC`);
+
+		// Check ETH balance for gas
+		const ethBalance = await signer.getBalance();
+		if (ethBalance.eq(0)) {
+			console.error("❌ Insufficient ETH on Arbitrum for gas fees");
+			console.log("Please send some ETH to your wallet for gas.");
+			process.exit(1);
+		}
+
+		// Check USDC balance
+		const balance = await usdcContract.balanceOf(signer.address);
+		const balanceFormatted = ethers.utils.formatUnits(balance, USDC_DECIMALS);
+		const parsedAmount = ethers.utils.parseUnits(
+			amount.toString(),
+			USDC_DECIMALS,
+		);
+
+		if (balance.lt(parsedAmount)) {
+			console.error(`❌ Insufficient USDC balance on Arbitrum`);
+			console.error(`   Required: ${amount}`);
+			console.error(`   Available: ${balanceFormatted}`);
+			process.exit(1);
+		}
+
+		console.log(`\n💰 Sending ${amount} USDC to Hyperliquid...`);
+
+		// Send USDC to Hyperliquid vault
+		const tx = await usdcContract.transfer(HYPERLIQUID_VAULT, parsedAmount);
+		console.log(`Transaction sent! Hash: ${tx.hash}`);
+		console.log("Waiting for confirmation...");
+
+		await tx.wait();
+		console.log("✅ Deposit successful!");
+		console.log(
+			`${amount} USDC has been deposited to your Hyperliquid account.`,
+		);
+		console.log(
+			"\n📊 Check your balance with: clawearn hyperliquid balance check",
+		);
+	} catch (error) {
+		console.error(
+			"Failed to deposit:",
+			error instanceof Error ? error.message : error,
+		);
 		process.exit(1);
 	}
 }
@@ -205,7 +296,10 @@ ACCOUNT COMMANDS:
 
 BALANCE COMMANDS:
   balance check        Check your USDC balance on Arbitrum
-  balance deposit      Deposit USDC (coming soon)
+
+DEPOSIT COMMANDS:
+  deposit              Deposit USDC to Hyperliquid
+    --amount <amount>  Amount of USDC to deposit (minimum: 10)
 
 EXAMPLES:
   # Show account info
@@ -214,10 +308,14 @@ EXAMPLES:
   # Check USDC balance
   clawearn hyperliquid balance check
 
-TRADING COMING SOON:
-  # Phase 2: Deposits
-  # Phase 3: Place orders
-  # Phase 4: Manage positions
+  # Deposit USDC to Hyperliquid
+  clawearn hyperliquid deposit --amount 100
+
+TRADING COMING SOON (Phase 3):
+  # Place orders
+  # Get market prices
+  # Manage positions
+  # Close positions
 
 DOCUMENTATION:
   Read skills/markets/hyperliquid/SKILL.md for full guide
