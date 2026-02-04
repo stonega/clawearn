@@ -218,6 +218,229 @@ Error: Order failed (negRisk)
 
 ---
 
+## How to Play on Polymarket 🎮
+
+### Understanding Prediction Markets
+
+**What is Polymarket?**
+- You're betting on real-world events (yes/no outcomes)
+- Buy shares if you think event will happen (YES) or won't (NO)
+- Price = probability (0.50 = 50% chance)
+- Profit = (final_price - buy_price) × shares
+
+**Example:**
+```
+Market: "Will Bitcoin hit $100k by end of 2025?"
+Current Price: $0.65 (65% chance)
+
+You buy 10 YES shares at $0.65 = cost $6.50
+Event resolves YES → You get $10.00
+Profit: $3.50 (54% return)
+```
+
+### Step 1: Find a Market
+
+```bash
+# Search for events you understand
+clawearn polymarket market search --query "bitcoin price"
+
+# Results show:
+# - Bitcoin above ___ on February 3? (ID: 190531)
+# - What price will Bitcoin hit in February? (ID: 194107)
+```
+
+**What to look for:**
+- ✅ Markets you understand
+- ✅ Clear yes/no outcomes
+- ✅ Good liquidity (tight bid-ask spread)
+- ✅ Reasonable timeframe (not resolving tomorrow)
+- ✅ Events with real information available
+
+### Step 2: Get Market Details
+
+```bash
+# Get full market info (need market ID from search)
+clawearn polymarket market info --market-id 190531
+
+# You'll see:
+# - Market description
+# - Current outcome details
+# - Token IDs for YES/NO
+# - Resolution criteria
+```
+
+**Key info to check:**
+- What does YES/NO mean exactly?
+- When does it resolve?
+- What determines the outcome?
+- How much liquidity is there?
+
+### Step 3: Check the Price
+
+```bash
+# Get the current price (buying/selling)
+clawearn polymarket price get --token-id 0x... --side buy
+
+# Check order book
+clawearn polymarket price book --token-id 0x...
+```
+
+**Price interpretation:**
+```
+Price: 0.45 = Market says 45% chance
+Price: 0.70 = Market says 70% chance
+Price: 0.95 = Market says 95% chance (very confident)
+```
+
+**Spread matters:**
+```
+BUY: 0.50, SELL: 0.48 = Normal (2¢ spread = liquid)
+BUY: 0.50, SELL: 0.40 = Bad (10¢ spread = avoid)
+```
+
+### Step 4: Place Your First Trade
+
+**Before you buy, ask yourself:**
+- ✅ Do I understand this market?
+- ✅ Do I disagree with the price?
+- ✅ Is my position size small (5% of portfolio)?
+- ✅ Can I afford to lose this?
+
+**Example: Small test trade**
+```bash
+# Buy 10 shares at current market price
+clawearn polymarket order buy \
+  --token-id 0x3f2431d0471e2ecbb8833b4ef34c25f9ba1701e6 \
+  --price 0.50 \
+  --size 10
+```
+
+**Result:**
+- ✅ Cost: 10 × $0.50 = $5.00 USDC spent
+- ✅ If resolves YES: Get $10.00 back
+- ✅ If resolves NO: Get $0.00
+- ✅ Profit/Loss: -$5 to +$5
+
+### Step 5: Manage Your Position
+
+**Check your open orders:**
+```bash
+clawearn polymarket order list-open
+```
+
+**If you want to exit early:**
+```bash
+# Sell your shares to lock in gains/losses
+clawearn polymarket order sell \
+  --token-id 0x3f2431d0471e2ecbb8833b4ef34c25f9ba1701e6 \
+  --price 0.55 \
+  --size 10
+```
+
+**If you think you were wrong:**
+```bash
+# Exit and take small loss rather than bigger loss
+clawearn polymarket order sell \
+  --token-id 0x3f2431d0471e2ecbb8833b4ef34c25f9ba1701e6 \
+  --price 0.45 \
+  --size 10
+```
+
+### Trading Strategies
+
+#### 1. **Conviction Trade** (High Confidence)
+```
+You're very sure about outcome
+- Price: 0.35 (market disagrees)
+- Position: 50-100 shares
+- Timeline: Long hold until resolution
+```
+
+#### 2. **Arbitrage Trade** (Price Mismatch)
+```
+Same event on different markets
+- Polymarket: 0.50 (YES)
+- Kalshi: 0.55 (YES)
+- Spread: 5%
+- Strategy: Buy low, sell high
+```
+
+#### 3. **News Trade** (React to Events)
+```
+Major news changes probability
+- Before: 0.30 (low chance)
+- After announcement: 0.70
+- Speed matters for news trades!
+```
+
+#### 4. **Swing Trade** (Price Movement)
+```
+Trade the bounces
+- Buy when sentiment drops
+- Sell when sentiment rises
+- Timeline: Days to weeks
+```
+
+### Practical Example: Full Trade
+
+**Scenario:** You think Bitcoin will hit $50k
+
+```bash
+# Step 1: Find market
+clawearn polymarket market search --query "Bitcoin 50k"
+
+# Step 2: Get details
+clawearn polymarket market info --market-id 190531
+
+# Step 3: Check price
+clawearn polymarket price get --token-id 0x...
+
+# Step 4: Your decision
+# Market says 55% chance (price 0.55)
+# You think 75% chance
+# Price is too low → BUY
+
+# Step 5: Place order (small test: $50)
+clawearn polymarket order buy \
+  --token-id 0x... \
+  --price 0.55 \
+  --size 91  # About 91 shares for ~$50
+
+# Step 6: Monitor
+clawearn polymarket order list-open
+
+# Step 7: Outcome
+# If Bitcoin hits $50k:
+#   - Your 91 shares worth $91.00
+#   - Profit: $41 (82% return!)
+#
+# If Bitcoin doesn't:
+#   - Your 91 shares worth $0
+#   - Loss: $50 (be prepared!)
+```
+
+### Trading Psychology
+
+**Emotions to manage:**
+
+❌ **FOMO** - "Everyone's buying, I should too!"
+- Fix: Only trade what you understand
+
+❌ **Loss Aversion** - "I'll hold and hope it recovers"
+- Fix: Exit early losses, don't compound
+
+❌ **Overconfidence** - "I'm 100% sure this will happen"
+- Fix: Nothing is 100%, size accordingly
+
+✅ **Good habits:**
+- Trade with a plan
+- Stick to position sizing
+- Exit losing trades quickly
+- Let winners run
+- Document everything
+
+---
+
 ## Examples
 
 ### Workflow: Find and trade a market
@@ -232,26 +455,39 @@ clawearn polymarket market info --market-id 0x...
 # 3. Check current price
 clawearn polymarket price get --token-id 0x... --side buy
 
-# 4. Place an order
+# 4. Check order book depth
+clawearn polymarket price book --token-id 0x...
+
+# 5. Place an order (start small!)
 clawearn polymarket order buy \
   --token-id 0x... \
   --price 0.45 \
-  --size 20 \
-  --private-key $KEY \
-  --signature-type 0
+  --size 20
+
+# 6. Monitor your position
+clawearn polymarket order list-open
+
+# 7. Exit if needed
+clawearn polymarket order sell \
+  --token-id 0x... \
+  --price 0.55 \
+  --size 20
 ```
 
-### Workflow: Create account and get funding
+### Workflow: Create wallet and start trading
 
 ```bash
-# 1. Create new account
-clawearn polymarket account create --email agent@openclaw.io --password secure123
+# 1. Create wallet
+clawearn wallet create
 
-# 2. Request testnet funds
-clawearn polymarket balance pocket-money --amount 50
+# 2. Fund wallet with USDC on Arbitrum
+clawearn wallet send --to YOUR_ADDRESS --amount 100
 
 # 3. Check balance
-clawearn polymarket balance check --private-key <exported-key>
+clawearn polymarket balance check
+
+# 4. Start with test trades (5-10% of capital)
+# See "How to Play" section above for step-by-step
 ```
 
 ---
