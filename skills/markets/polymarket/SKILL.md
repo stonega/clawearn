@@ -8,7 +8,7 @@ metadata:
   category: trading
   platform: polymarket
   requires_auth: true
-  features: ["market-search", "price-feeds", "order-placement", "balance-checking", "portfolio-tracking"]
+  features: ["market-search", "price-feeds", "order-placement", "balance-checking", "portfolio-tracking", "gas-refuel"]
 ---
 
 # Polymarket Trading Skill 📈
@@ -22,6 +22,7 @@ Trade prediction markets directly from your OpenClaw bot using Clawearn.
 - 📊 Get real-time prices and order book data
 - 🎯 Place buy/sell orders automatically
 - 📋 Manage your open orders
+- ⛽ Refuel POL gas for Polygon chain
 - 🤖 Build autonomous trading strategies
 
 ## Skill Files
@@ -108,7 +109,35 @@ The tool will automatically fetch your unique deposit address from Polymarket an
 **Options:**
 - `--usdce`: Use this flag if you are sending bridged USDC.e instead of native USDC.
 
-### 4. Market Discovery
+### 4. Gas Refuel (Polygon)
+
+**Estimate refuel cost:**
+```bash
+clawearn polymarket refuel estimate --amount 0.5
+```
+
+**Execute refuel:**
+```bash
+clawearn polymarket refuel refuel --amount 0.5
+```
+
+**Refuel to a specific recipient:**
+```bash
+clawearn polymarket refuel refuel --amount 1 --recipient 0x...
+```
+
+**What is refuel?**
+- Adds POL gas to your Polygon wallet via L2Pass bridge service
+- Refuel contract deployed on Arbitrum: `0x065699fda5db01cdbffd1625aeed8e6f5ba7efdf`
+- You pay in ETH on Arbitrum for cross-chain gas delivery
+- Useful when your Polygon wallet runs low on gas for transactions
+
+**Options:**
+- `--amount <amount>`: Amount of POL to refuel (required)
+- `--recipient <address>`: Recipient address on Polygon (defaults to your wallet address)
+- `--private-key <key>`: Private key (optional, uses stored wallet if not provided)
+
+### 5. Market Discovery
 
 **Search markets by keyword:**
 ```bash
@@ -125,7 +154,7 @@ clawearn polymarket market list --tag politics --limit 10
 clawearn polymarket market info --market-id MARKET_ID
 ```
 
-### 5. Price Data
+### 6. Price Data
 
 **Get current market price:**
 ```bash
@@ -137,7 +166,7 @@ clawearn polymarket price get --token-id TOKEN_ID --side buy
 clawearn polymarket price book --token-id TOKEN_ID
 ```
 
-### 6. Trading
+### 7. Trading
 
 **Place a buy order:**
 ```bash
@@ -490,6 +519,25 @@ clawearn polymarket balance check
 # See "How to Play" section above for step-by-step
 ```
 
+### Workflow: Refuel gas for Polygon wallet
+
+```bash
+# 1. Check how much refuel will cost
+clawearn polymarket refuel estimate --amount 0.5
+
+# 2. Review the ETH fee in the output
+# Example: Native Fee: 0.01 ETH, Total Cost: 0.01 ETH
+
+# 3. Execute refuel (send 0.5 POL to Polygon)
+clawearn polymarket refuel refuel --amount 0.5
+
+# 4. Wait for confirmation and check your Polygon wallet balance
+# The POL will arrive within minutes via L2Pass
+
+# 5. Optional: Refuel to a different address
+clawearn polymarket refuel refuel --amount 1 --recipient 0x...
+```
+
 ---
 
 ## CLI Installation
@@ -535,6 +583,8 @@ If you hit rate limits, implement exponential backoff in your agent's logic.
 5. **Handle errors gracefully** - Implement retry logic with backoff
 6. **Store credentials securely** - Never log or expose private keys
 7. **Test with small amounts first** - Validate your logic before scaling
+8. **Maintain Polygon gas** - Periodically refuel POL when your Polygon wallet runs low on gas
+9. **Estimate refuel costs first** - Always run `refuel estimate` before executing refuel transactions
 
 ---
 

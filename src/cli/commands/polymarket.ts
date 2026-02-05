@@ -40,6 +40,9 @@ export async function runPolymarket(args: string[]) {
 		case "deposit":
 			await handleDeposit(args);
 			break;
+		case "refuel":
+			await handleRefuel(args.slice(1));
+			break;
 		case "help":
 		case "--help":
 		case "-h":
@@ -477,11 +480,51 @@ async function handleOrder(args: string[]) {
 }
 
 const BRIDGE_API = "https://bridge.polymarket.com";
+const L2PASS_REFUEL_ADDRESS = "0x065699fda5db01cdbffd1625aeed8e6f5ba7efdf";
+const POLYGON_CHAIN_ID = 137; // Destination chain ID for Polygon
 
 const ERC20_ABI = [
 	"function balanceOf(address owner) view returns (uint256)",
 	"function decimals() view returns (uint8)",
 	"function transfer(address to, uint256 amount) returns (bool)",
+];
+
+// L2Pass Gas Refuel Contract ABI
+const REFUEL_ABI = [
+	{
+		inputs: [
+			{ internalType: "uint16", name: "dstChainId", type: "uint16" },
+			{ internalType: "uint256", name: "nativeForDst", type: "uint256" },
+			{ internalType: "address", name: "addressOnDst", type: "address" },
+			{ internalType: "bool", name: "useZro", type: "bool" },
+		],
+		name: "estimateGasRefuelFee",
+		outputs: [
+			{ internalType: "uint256", name: "nativeFee", type: "uint256" },
+			{ internalType: "uint256", name: "zroFee", type: "uint256" },
+		],
+		stateMutability: "view",
+		type: "function",
+	},
+	{
+		inputs: [
+			{ internalType: "uint16", name: "dstChainId", type: "uint16" },
+			{ internalType: "address", name: "zroPaymentAddress", type: "address" },
+			{ internalType: "uint256", name: "nativeForDst", type: "uint256" },
+			{ internalType: "address", name: "addressOnDst", type: "address" },
+		],
+		name: "gasRefuel",
+		outputs: [],
+		stateMutability: "payable",
+		type: "function",
+	},
+	{
+		inputs: [],
+		name: "gasRefuelPrice",
+		outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+		stateMutability: "view",
+		type: "function",
+	},
 ];
 
 async function fetchDepositAddress(walletAddress: string): Promise<string> {
@@ -588,6 +631,246 @@ async function handleDeposit(args: string[]) {
 	}
 }
 
+async function handleRefuel(args: string[]) {
+	const subcommand = args[0];
+
+	if (!subcommand) {
+		showRefuelHelp();
+		return;
+	}
+
+	switch (subcommand) {
+		case "estimate":
+			await handleRefuelEstimate(args);
+			break;
+		case "refuel":
+			await handleGasRefuel(args);
+			break;
+		case "help":
+		case "--help":
+		case "-h":
+			showRefuelHelp();
+			break;
+		default:
+			console.error(`Unknown refuel command: ${subcommand}`);
+			showRefuelHelp();
+			process.exit(1);
+	}
+}
+
+async function handleRefuelEstimate(args: string[]) {
+	const amountStr = getArg(args, "--amount");
+	const recipientArg = getArg(args, "--recipient");
+
+	if (!amountStr) {
+		console.error(
+			"Usage: clawearn polymarket refuel estimate --amount <amount> [--recipient <address>]",
+		);
+		process.exit(1);
+	}
+
+	const privateKey = requirePrivateKey(args, "polymarket refuel estimate");
+
+	try {
+		const provider = new ethers.providers.JsonRpcProvider(ARBITRUM_RPC);
+		const wallet = new Wallet(privateKey, provider);
+		const recipient = recipientArg || wallet.address;
+
+		// Validate recipient address
+		if (!ethers.utils.isAddress(recipient)) {
+			console.error(`❌ Invalid recipient address: ${recipient}`);
+			process.exit(1);
+		}
+
+		const refuelContract = new ethers.Contract(
+			L2PASS_REFUEL_ADDRESS,
+			REFUEL_ABI,
+			provider,
+		);
+
+		// Parse amount in wei
+		const amountWei = ethers.utils.parseEther(amountStr);
+
+		console.log("Estimating gas refuel fee...");
+		console.log(`  Amount: ${amountStr} POL`);
+		console.log(`  Recipient: ${recipient}`);
+		console.log(`  Destination: Polygon (Chain ID: ${POLYGON_CHAIN_ID})\n`);
+
+		// biome-ignore lint/suspicious/noExplicitAny: Contract call returns tuple
+		const [nativeFee, zroFee] = (await refuelContract.estimateGasRefuelFee(
+			POLYGON_CHAIN_ID,
+			amountWei,
+			recipient,
+			false,
+		)) as any;
+
+		console.log("Fee Estimation Results:");
+		console.log(`  Native Fee (ETH): ${ethers.utils.formatEther(nativeFee)}`);
+		console.log(`  ZRO Fee: ${ethers.utils.formatEther(zroFee)}`);
+		console.log(
+			`\n  Total Cost (ETH): ${ethers.utils.formatEther(nativeFee.add(zroFee))}`,
+		);
+
+		// Check wallet balance
+		const ethBalance = await wallet.getBalance();
+		const totalRequired = nativeFee.add(zroFee);
+
+		if (ethBalance.lt(totalRequired)) {
+			console.error(`\n⚠️  Warning: Insufficient ETH balance for this refuel`);
+			console.error(
+				`   Required: ${ethers.utils.formatEther(totalRequired)} ETH`,
+			);
+			console.error(`   Available: ${ethers.utils.formatEther(ethBalance)} ETH`);
+		}
+	} catch (error) {
+		console.error(
+			"Failed to estimate refuel fee:",
+			error instanceof Error ? error.message : error,
+		);
+		process.exit(1);
+	}
+}
+
+async function handleGasRefuel(args: string[]) {
+	const amountStr = getArg(args, "--amount");
+	const recipientArg = getArg(args, "--recipient");
+
+	if (!amountStr) {
+		console.error(
+			"Usage: clawearn polymarket refuel refuel --amount <amount> [--recipient <address>]",
+		);
+		process.exit(1);
+	}
+
+	const privateKey = requirePrivateKey(args, "polymarket refuel refuel");
+
+	try {
+		const provider = new ethers.providers.JsonRpcProvider(ARBITRUM_RPC);
+		const wallet = new Wallet(privateKey, provider);
+		const recipient = recipientArg || wallet.address;
+
+		// Validate recipient address
+		if (!ethers.utils.isAddress(recipient)) {
+			console.error(`❌ Invalid recipient address: ${recipient}`);
+			process.exit(1);
+		}
+
+		const refuelContract = new ethers.Contract(
+			L2PASS_REFUEL_ADDRESS,
+			REFUEL_ABI,
+			wallet,
+		);
+
+		// Parse amount in wei
+		const amountWei = ethers.utils.parseEther(amountStr);
+
+		console.log("Estimating gas refuel fee...");
+		// biome-ignore lint/suspicious/noExplicitAny: Contract call returns tuple
+		const [nativeFee, zroFee] = (await refuelContract.estimateGasRefuelFee(
+			POLYGON_CHAIN_ID,
+			amountWei,
+			recipient,
+			false,
+		)) as any;
+
+		const totalCost = nativeFee.add(zroFee);
+
+		// Check wallet balance
+		const ethBalance = await wallet.getBalance();
+		if (ethBalance.lt(totalCost)) {
+			console.error("❌ Insufficient ETH balance for refuel");
+			console.error(
+				`   Required: ${ethers.utils.formatEther(totalCost)} ETH`,
+			);
+			console.error(`   Available: ${ethers.utils.formatEther(ethBalance)} ETH`);
+			process.exit(1);
+		}
+
+		console.log("\n📤 Gas Refuel Transaction Details:");
+		console.log(`   From: ${wallet.address}`);
+		console.log(`   To: ${recipient}`);
+		console.log(`   Amount: ${amountStr} POL`);
+		console.log(`   Network: Polygon (Chain ID: ${POLYGON_CHAIN_ID})`);
+		console.log(`   Native Fee: ${ethers.utils.formatEther(nativeFee)} ETH`);
+		console.log(`   ZRO Fee: ${ethers.utils.formatEther(zroFee)} ETH`);
+		console.log(`   Total Cost: ${ethers.utils.formatEther(totalCost)} ETH`);
+
+		console.log("\nSending refuel transaction...");
+
+		// Execute refuel with estimated fee
+		const tx = await refuelContract.gasRefuel(
+			POLYGON_CHAIN_ID,
+			ethers.constants.AddressZero,
+			amountWei,
+			recipient,
+			{
+				value: totalCost,
+			},
+		);
+
+		console.log(`✓ Transaction sent!`);
+		console.log(`   Hash: ${tx.hash}`);
+		console.log("   Waiting for confirmation...\n");
+
+		const receipt = await tx.wait();
+
+		if (receipt && receipt.status === 1) {
+			console.log("✅ Gas Refuel successful!");
+			console.log(
+				`   ${amountStr} POL will be available on Polygon shortly`,
+			);
+			console.log(`   Recipient: ${recipient}`);
+		} else {
+			console.error("❌ Transaction failed!");
+			process.exit(1);
+		}
+	} catch (error) {
+		console.error(
+			"Failed to execute refuel:",
+			error instanceof Error ? error.message : error,
+		);
+		process.exit(1);
+	}
+}
+
+function showRefuelHelp() {
+	console.log(`
+Gas Refuel Commands
+
+Usage: clawearn polymarket refuel <command> [options]
+
+COMMANDS:
+  estimate          Estimate the cost of refueling gas on Polygon
+    --amount <amount>         Amount of POL to refuel (required)
+    --recipient <address>     Recipient address on Polygon (default: your address)
+    --private-key <key>       Private key (optional, uses stored wallet if not provided)
+
+  refuel            Execute a gas refuel transaction to Polygon
+    --amount <amount>         Amount of POL to refuel (required)
+    --recipient <address>     Recipient address on Polygon (default: your address)
+    --private-key <key>       Private key (optional, uses stored wallet if not provided)
+
+EXAMPLES:
+  # Estimate the cost to refuel 0.5 POL to your Polygon account
+  clawearn polymarket refuel estimate --amount 0.5
+
+  # Estimate the cost to refuel 1 POL to another address
+  clawearn polymarket refuel estimate --amount 1 --recipient 0x1234...
+
+  # Execute a refuel transaction (0.5 POL to your address)
+  clawearn polymarket refuel refuel --amount 0.5
+
+  # Refuel to a specific address
+  clawearn polymarket refuel refuel --amount 1 --recipient 0x5678...
+
+NOTES:
+  • The refuel contract is deployed on Arbitrum
+  • Gas is refueled to Polygon network
+  • You need ETH on Arbitrum to pay for the refuel transaction fees
+  • This uses the L2Pass refuel service (0x065699fda5db01cdbffd1625aeed8e6f5ba7efdf)
+`);
+}
+
 function showPolymarketHelp() {
 	console.log(`
 Polymarket Trading Commands
@@ -595,77 +878,86 @@ Polymarket Trading Commands
 Usage: clawearn polymarket <command> [subcommand] [options]
 
 SETUP:
-  First, create a wallet:
-    clawearn wallet create
+   First, create a wallet:
+     clawearn wallet create
 
-  Fund your wallet with USDC on Polygon, then start trading!
+   Fund your wallet with USDC on Polygon, then start trading!
 
 ACCOUNT COMMANDS:
-  account              Show your wallet address and status
-  account info         Same as above
+   account              Show your wallet address and status
+   account info         Same as above
 
 BALANCE COMMANDS:
-  balance check        Check wallet connection (uses stored wallet)
-    --signature-type <0|1|2>     0=EOA (default), uses stored wallet
+   balance check        Check wallet connection (uses stored wallet)
+     --signature-type <0|1|2>     0=EOA (default), uses stored wallet
 
 MARKET COMMANDS:
-  market search
-    --query <query>              Search query
+   market search
+     --query <query>              Search query
 
-  market list
-    --tag <tag>                  Filter by tag
-    --limit <n>                  Results limit (default: 10)
+   market list
+     --tag <tag>                  Filter by tag
+     --limit <n>                  Results limit (default: 10)
 
-  market info
-    --market-id <id>             Market ID
+   market info
+     --market-id <id>             Market ID
 
 PRICE COMMANDS:
-  price get
-    --token-id <id>              Token ID
-    --side <buy|sell>            Side (default: buy)
+   price get
+     --token-id <id>              Token ID
+     --side <buy|sell>            Side (default: buy)
 
-  price book
-    --token-id <id>              Token ID
+   price book
+     --token-id <id>              Token ID
 
 ORDER COMMANDS:
-  order buy
-    --token-id <id>              Token ID
-    --price <price>              Price per share
-    --size <size>                Number of shares
-    --signature-type <0|1|2>     0=EOA (default)
+   order buy
+     --token-id <id>              Token ID
+     --price <price>              Price per share
+     --size <size>                Number of shares
+     --signature-type <0|1|2>     0=EOA (default)
 
-  order sell
-    --token-id <id>              Token ID
-    --price <price>              Price per share
-    --size <size>                Number of shares
+   order sell
+     --token-id <id>              Token ID
+     --price <price>              Price per share
+     --size <size>                Number of shares
 
-  order list-open                List your open orders
+   order list-open                List your open orders
 
-  order cancel
-    --order-id <id>              Order ID to cancel
+   order cancel
+     --order-id <id>              Order ID to cancel
 
 NOTE: All commands use your stored wallet automatically.
       Create one with: clawearn wallet create
 
 DEPOSIT COMMANDS:
-  deposit
-    --amount <amount>            Amount of USDC to deposit
-    --usdce                      Use bridged USDC.e instead of native USDC
+    deposit
+      --amount <amount>            Amount of USDC to deposit
+      --usdce                      Use bridged USDC.e instead of native USDC
+
+REFUEL COMMANDS:
+    refuel estimate
+      --amount <amount>            Amount of POL to refuel
+      --recipient <address>        Recipient address (default: your address)
+
+    refuel refuel
+      --amount <amount>            Amount of POL to refuel
+      --recipient <address>        Recipient address (default: your address)
 
 EXAMPLES:
-  # Search for markets
-  clawearn polymarket market search --query "bitcoin 2025"
+   # Search for markets
+   clawearn polymarket market search --query "bitcoin 2025"
 
-  # Place a buy order (uses stored wallet)
-  clawearn poly order buy \\
-    --token-id 0x... \\
-    --price 0.50 \\
-    --size 10
+   # Place a buy order (uses stored wallet)
+   clawearn poly order buy \\
+     --token-id 0x... \\
+     --price 0.50 \\
+     --size 10
 
-  # Check open orders
-  clawearn poly order list-open
+   # Check open orders
+   clawearn poly order list-open
 
-  # View your wallet address
-  clawearn polymarket account
+   # View your wallet address
+   clawearn polymarket account
 `);
 }
