@@ -1,7 +1,7 @@
 ---
 name: polymarket-trading
-version: 1.1.0
-description: Trade prediction markets on Polymarket with your OpenClaw bot. Market discovery, price data, and automated order execution.
+version: 1.2.0
+description: Trade prediction markets on Polymarket with your OpenClaw bot. Market discovery, price data, and automated order execution. Now with POL gas refuel support.
 homepage: https://www.polymarket.com
 documentation: https://docs.polymarket.com
 metadata: 
