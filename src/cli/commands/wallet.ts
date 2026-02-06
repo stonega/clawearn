@@ -41,6 +41,9 @@ export async function runWallet(args: string[]) {
 		case "address":
 			await showAddress();
 			break;
+		case "balance":
+			await handleBalance(args);
+			break;
 		case "send":
 			await handleSend(args);
 			break;
@@ -157,6 +160,69 @@ async function showAddress() {
 	console.log(
 		"\n📤 Send USDC (Arbitrum) to this address to fund your trading account",
 	);
+}
+
+async function handleBalance() {
+	const wallet = loadWallet();
+
+	if (!wallet) {
+		console.error("❌ No wallet found. Create one first:");
+		console.log("   clawearn wallet create");
+		process.exit(1);
+	}
+
+	try {
+		const provider = new ethers.providers.JsonRpcProvider(ARBITRUM_RPC);
+		const signer = new Wallet(wallet.privateKey, provider);
+
+		console.log("\n📊 Fetching balances from Arbitrum...\n");
+
+		// Get ETH balance
+		const ethBalance = await signer.getBalance();
+		const ethFormatted = ethers.utils.formatEther(ethBalance);
+
+		// Get USDC balance
+		const usdcContract = new ethers.Contract(USDC_ADDRESS, USDC_ABI, provider);
+		const usdcBalance = await usdcContract.balanceOf(signer.address);
+		const usdcFormatted = ethers.utils.formatUnits(usdcBalance, USDC_DECIMALS);
+
+		// Display balances
+		console.log(
+			"═══════════════════════════════════════════════════════════════",
+		);
+		console.log(
+			"                      WALLET BALANCES (ARBITRUM)                ",
+		);
+		console.log(
+			"═══════════════════════════════════════════════════════════════",
+		);
+		console.log(`\nAddress: ${signer.address}`);
+		console.log(`\n💰 USDC Balance:  ${usdcFormatted} USDC`);
+		console.log(`⛽ ETH Balance:   ${ethFormatted} ETH`);
+		console.log(
+			"\n═══════════════════════════════════════════════════════════════\n",
+		);
+
+		// Show warnings if balances are low
+		const ethBalanceNum = parseFloat(ethFormatted);
+		const usdcBalanceNum = parseFloat(usdcFormatted);
+
+		if (ethBalanceNum < 0.01) {
+			console.warn("⚠️  Warning: ETH balance is very low (< 0.01 ETH)");
+			console.log("   You may not have enough gas to execute transactions.");
+		}
+
+		if (usdcBalanceNum === 0) {
+			console.warn("⚠️  Warning: No USDC balance");
+			console.log("   Fund your wallet to start trading on Polymarket.");
+		}
+	} catch (error) {
+		console.error(
+			"Failed to fetch balances:",
+			error instanceof Error ? error.message : error,
+		);
+		process.exit(1);
+	}
 }
 
 async function handleSend(args: string[]) {
@@ -286,6 +352,8 @@ COMMANDS:
 
   show, address   Display your wallet address (safe to share)
 
+  balance         Check USDC and ETH balances on Arbitrum
+
   send            Send USDC to another address (Arbitrum)
     --to <addr>        Recipient address
     --amount <amount>  Amount of USDC to send
@@ -296,6 +364,9 @@ EXAMPLES:
 
   # Show your wallet address (for receiving funds)
   clawearn wallet show
+
+  # Check your balances on Arbitrum
+  clawearn wallet balance
 
   # Send USDC to another address
   clawearn wallet send --to 0x1234... --amount 100
