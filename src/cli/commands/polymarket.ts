@@ -632,23 +632,27 @@ async function handleOrder(args: string[]) {
 
 		try {
 			const signer = new Wallet(privateKey);
-			const client = new ClobClient(HOST, CHAIN_ID, signer);
 
-			console.log("Creating API credentials...");
-			const userApiCreds = await client.createOrDeriveApiKey();
-
-			console.log("Initializing authenticated client...");
-			const authedClient = new ClobClient(
+			// Use EOA signature type (0) - no API credentials needed
+			console.log("Initializing EOA client (using wallet signature)...");
+			const client = new ClobClient(
 				HOST,
 				CHAIN_ID,
 				signer,
-				userApiCreds,
+				undefined, // No API credentials
+				0, // Signature type 0 = EOA
+				signer.address, // Funder = your wallet address
 			);
 
 			console.log("Fetching market details...");
 			let market;
 			try {
-				market = await authedClient.getMarket(tokenId);
+				market = await client.getMarket(tokenId);
+
+				// Check if market is an error response
+				if ((market as any).error) {
+					throw new Error(`Market Error: ${(market as any).error}`);
+				}
 			} catch (marketError) {
 				console.error(
 					`❌ Market not found with token ID: ${tokenId}`,
@@ -677,11 +681,13 @@ async function handleOrder(args: string[]) {
 				process.exit(1);
 			}
 
-			if (!market || !market.tickSize) {
+			// Use minimum_tick_size or tickSize depending on response format
+			const tickSize = (market as any).tickSize || (market as any).minimum_tick_size || 0.001;
+
+			if (!market) {
 				console.error(
 					"❌ Invalid market data received",
 				);
-				console.error("Market details:", market);
 				process.exit(1);
 			}
 
@@ -693,18 +699,18 @@ async function handleOrder(args: string[]) {
 			const side = subcommand === "buy" ? module.Side.BUY : module.Side.SELL;
 
 			// Create the signed order
-			const signedOrder = await authedClient.createOrder(
+			const signedOrder = await client.createOrder(
 				{
 					tokenID: tokenId,
 					price: price,
 					size: size,
 					side: side,
 				},
-				market.tickSize,
+				tickSize,
 			);
 
 			// Post the order to the API
-			const response = await authedClient.postOrder(
+			const response = await client.postOrder(
 				signedOrder,
 				module.OrderType.GTC,
 			);
