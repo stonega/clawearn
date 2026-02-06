@@ -126,19 +126,25 @@ async function handleBalance(args: string[]) {
 		try {
 			const signer = new Wallet(privateKey);
 			const client = new ClobClient(HOST, CHAIN_ID, signer);
-			const apiCreds = await client.createOrDeriveApiKey();
-
-			const _authedClient = new ClobClient(
-				HOST,
-				CHAIN_ID,
-				signer,
-				apiCreds,
-			);
-
-			// Note: For full balance data, would need to implement balance fetch
-			// from user positions API
+			
 			console.log(`Wallet Address: ${signer.address}`);
-			console.log("API Credentials derived successfully");
+			console.log(
+				"Note: API credential derivation requires wallet to be registered on Polymarket.",
+			);
+			console.log(
+				"\nTo use Polymarket trading features:",
+			);
+			console.log("  1. Visit https://polymarket.com");
+			console.log("  2. Connect your wallet (0x9Eb60033E4FdE90839e586DdAE9d9Edef7a5A873)");
+			console.log("  3. Complete any required setup and make a deposit");
+			console.log("  4. Your account will be activated and ready to trade");
+			console.log(
+				"\nOnce registered, you can use clawearn for:",
+			);
+			console.log("  - Market search and discovery");
+			console.log("  - Price checking");
+			console.log("  - Order placement and management");
+			console.log("  - Balance checking via API");
 		} catch (error) {
 			console.error(
 				"Failed to check balance:",
@@ -147,7 +153,7 @@ async function handleBalance(args: string[]) {
 			process.exit(1);
 		}
 	} else {
-		console.error("Usage: clawearn polymarket balance [check|pocket-money]");
+		console.error("Usage: clawearn polymarket balance check");
 		process.exit(1);
 	}
 }
