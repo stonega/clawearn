@@ -460,10 +460,11 @@ async function handleMarket(args: string[]) {
 							`\n   ${markets.length} markets in this event:`,
 						);
 
-						// Try to fetch full market details to get titles
+						// Try to fetch full market details to get titles and token IDs
 						// biome-ignore lint/suspicious/noExplicitAny: Market object from Gamma
 						for (let idx = 0; idx < Math.min(10, markets.length); idx++) {
 							const mkt = markets[idx];
+							const tokenId = mkt.tokenId || mkt.token_id || "N/A";
 							const conditionId = mkt.conditionId || mkt.condition_id || mkt.id || "N/A";
 							let title = mkt.title || mkt.outcome || "Unknown";
 
@@ -493,9 +494,16 @@ async function handleMarket(args: string[]) {
 							console.log(
 								`   ${idx + 1}. ${title}`,
 							);
-							console.log(
-								`      Condition ID: ${conditionId}`,
-							);
+							if (tokenId !== "N/A") {
+								console.log(
+									`      Token ID: ${tokenId}`,
+								);
+							}
+							if (conditionId !== "N/A") {
+								console.log(
+									`      Condition ID: ${conditionId}`,
+								);
+							}
 						}
 
 						if (markets.length > 10) {
@@ -505,7 +513,7 @@ async function handleMarket(args: string[]) {
 						}
 
 						console.log(
-							"\n   Use one of the Condition IDs above to place orders.",
+							"\n   Use one of the Token IDs above to place orders.",
 						);
 						return;
 					} else {
@@ -652,12 +660,11 @@ async function handleOrder(args: string[]) {
 				);
 				console.error("\nPossible issues:");
 				console.error(
-					"  1. If you got this ID from 'market search', it might be a Gamma Event ID",
+					"  1. The Token ID might be invalid or the market may have expired",
 				);
 				console.error(
-					"  2. Use 'market info --market-id <id>' to get the condition ID first",
+					"  2. Make sure you're using the Token ID (not Condition ID or Event ID)",
 				);
-				console.error("  3. The market may have expired or been removed");
 				console.error(
 					"\nTo find a market and place an order:",
 				);
@@ -670,7 +677,7 @@ async function handleOrder(args: string[]) {
 				console.error(
 					"  3. clawearn polymarket market info --market-id <gamma-id>",
 				);
-				console.error("  4. Use the condition ID from market info for placing orders");
+				console.error("  4. Use the Token ID from market info for placing orders");
 				process.exit(1);
 			}
 
@@ -1251,8 +1258,8 @@ MARKET COMMANDS:
       Returns: Gamma Event IDs (for use with market info)
 
     market info
-      --market-id <id>             Market ID (Gamma Event ID or Condition ID)
-      Returns: Event details with Condition IDs (for use with order buy/sell)
+      --market-id <id>             Market ID (Gamma Event ID)
+      Returns: Event details with Token IDs (for use with order buy/sell)
 
 PRICE COMMANDS:
    price get
@@ -1302,13 +1309,13 @@ WORKFLOW: Search → Get ID → Place Order
     clawearn polymarket market search --query "bitcoin price 2025"
     # Returns: List of Gamma Event IDs
 
-    # 2. Get market details and condition IDs
+    # 2. Get market details and token IDs
     clawearn polymarket market info --market-id <gamma-event-id>
-    # Returns: List of markets with Condition IDs
+    # Returns: List of markets with Token IDs
 
-    # 3. Place a buy order using the Condition ID
-    clawearn poly order buy \\
-      --token-id <condition-id> \\
+    # 3. Place a buy order using the Token ID
+    clawearn polymarket order buy \\
+      --token-id <token-id> \\
       --price 0.50 \\
       --size 10
 
