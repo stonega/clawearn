@@ -676,6 +676,7 @@ async function handleOrder(args: string[]) {
 
 			// Use minimum_tick_size or tickSize depending on response format
 			const tickSize = (market as any).tickSize || (market as any).minimum_tick_size || 0.001;
+			const negRisk = (market as any).negRisk || false;
 
 			if (!market) {
 				console.error(
@@ -688,34 +689,51 @@ async function handleOrder(args: string[]) {
 				`Placing ${subcommand.toUpperCase()} order: ${size} shares @ $${price}`,
 			);
 
-			// Initialize authenticated client with EOA signature type for order placement
-			console.log("Initializing authenticated client for order placement...");
-			const authedClient = new ClobClient(
+			// Step 1: Initialize client with signer
+			console.log("Creating initial client...");
+			const initialClient = new ClobClient(HOST, CHAIN_ID, signer);
+
+			// Step 2: Derive API credentials from wallet
+			console.log("Deriving API credentials...");
+			let userApiCreds;
+			try {
+				userApiCreds = await initialClient.createOrDeriveApiKey();
+				console.log("✓ API credentials obtained");
+			} catch (credError) {
+				console.error("❌ Could not derive API credentials");
+				console.error(
+					"   Wallet may not be registered on Polymarket.com",
+				);
+				console.error("   Please visit https://polymarket.com to register");
+				process.exit(1);
+			}
+
+			// Step 3 & 4: Reinitialize with full authentication
+			console.log("Initializing authenticated client...");
+			const client = new ClobClient(
 				HOST,
 				CHAIN_ID,
 				signer,
-				undefined, // No API credentials needed for EOA
+				userApiCreds,
 				0, // Signature type 0 = EOA
 				signer.address, // Funder = your wallet address
 			);
 
+			// Step 5: Place order using convenience method
 			const module = await import("@polymarket/clob-client");
 			const side = subcommand === "buy" ? module.Side.BUY : module.Side.SELL;
 
-			// Create the signed order
-			const signedOrder = await authedClient.createOrder(
+			const response = await client.createAndPostOrder(
 				{
 					tokenID: tokenId,
 					price: price,
 					size: size,
 					side: side,
 				},
-				tickSize,
-			);
-
-			// Post the order to the API
-			const response = await authedClient.postOrder(
-				signedOrder,
+				{
+					tickSize: tickSize,
+					negRisk: negRisk,
+				},
 				module.OrderType.GTC,
 			);
 
