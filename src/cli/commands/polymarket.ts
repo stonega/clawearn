@@ -633,13 +633,29 @@ async function handleOrder(args: string[]) {
 		try {
 			const signer = new Wallet(privateKey);
 
-			// Use EOA signature type (0) - no API credentials needed
-			console.log("Initializing EOA client (using wallet signature)...");
+			// Create unauthenticated client first to get market details
+			console.log("Initializing client...");
+			const publicClient = new ClobClient(HOST, CHAIN_ID, signer);
+
+			// Attempt to create/derive API credentials for the wallet
+			console.log("Creating or deriving API credentials...");
+			let apiCreds;
+			try {
+				apiCreds = await publicClient.createOrDeriveApiKey();
+			} catch (apiError) {
+				console.log(
+					"Note: Could not create API credentials, proceeding with available options...",
+				);
+				// Continue without credentials - some operations may still work
+				apiCreds = undefined;
+			}
+
+			// Initialize authenticated client with EOA signature type
 			const client = new ClobClient(
 				HOST,
 				CHAIN_ID,
 				signer,
-				undefined, // No API credentials
+				apiCreds,
 				0, // Signature type 0 = EOA
 				signer.address, // Funder = your wallet address
 			);
