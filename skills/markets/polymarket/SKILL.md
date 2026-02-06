@@ -127,10 +127,11 @@ clawearn polymarket refuel refuel --amount 1 --recipient 0x...
 ```
 
 **What is refuel?**
-- Adds POL gas to your Polygon wallet via L2Pass bridge service
-- Refuel contract deployed on Arbitrum: `0x065699fda5db01cdbffd1625aeed8e6f5ba7efdf`
+- Adds POL gas to your Polygon wallet via L2Pass bridge service (powered by LayerZero)
+- Refuel contract deployed on Arbitrum: `0x222228060e7efbb1d78bb5d454581910e3922222`
 - You pay in ETH on Arbitrum for cross-chain gas delivery
 - Useful when your Polygon wallet runs low on gas for transactions
+- Uses LayerZero's cross-chain messaging for secure delivery
 
 **Options:**
 - `--amount <amount>`: Amount of POL to refuel (required)

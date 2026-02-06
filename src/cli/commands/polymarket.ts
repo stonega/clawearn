@@ -436,8 +436,8 @@ async function handleOrder(args: string[]) {
 }
 
 const BRIDGE_API = "https://bridge.polymarket.com";
-const L2PASS_REFUEL_ADDRESS = "0x065699fda5db01cdbffd1625aeed8e6f5ba7efdf";
-const POLYGON_CHAIN_ID = 137; // Destination chain ID for Polygon
+const L2PASS_REFUEL_ADDRESS = "0x222228060e7efbb1d78bb5d454581910e3922222";
+const POLYGON_CHAIN_ID = 109; // LayerZero chain ID for Polygon (not EVM chain ID 137)
 
 const ERC20_ABI = [
 	"function balanceOf(address owner) view returns (uint256)",
@@ -648,31 +648,46 @@ async function handleRefuelEstimate(args: string[]) {
 		console.log(`  Recipient: ${recipient}`);
 		console.log(`  Destination: Polygon (Chain ID: ${POLYGON_CHAIN_ID})\n`);
 
-		// biome-ignore lint/suspicious/noExplicitAny: Contract call returns tuple
-		const [nativeFee, zroFee] = (await refuelContract.estimateGasRefuelFee(
-			POLYGON_CHAIN_ID,
-			amountWei,
-			recipient,
-			false,
-		)) as any;
+		try {
+			// biome-ignore lint/suspicious/noExplicitAny: Contract call returns tuple
+			const [nativeFee, zroFee] = (await refuelContract.estimateGasRefuelFee(
+				POLYGON_CHAIN_ID,
+				amountWei,
+				recipient,
+				false,
+			)) as any;
 
-		console.log("Fee Estimation Results:");
-		console.log(`  Native Fee (ETH): ${ethers.utils.formatEther(nativeFee)}`);
-		console.log(`  ZRO Fee: ${ethers.utils.formatEther(zroFee)}`);
-		console.log(
-			`\n  Total Cost (ETH): ${ethers.utils.formatEther(nativeFee.add(zroFee))}`,
-		);
-
-		// Check wallet balance
-		const ethBalance = await wallet.getBalance();
-		const totalRequired = nativeFee.add(zroFee);
-
-		if (ethBalance.lt(totalRequired)) {
-			console.error(`\n⚠️  Warning: Insufficient ETH balance for this refuel`);
-			console.error(
-				`   Required: ${ethers.utils.formatEther(totalRequired)} ETH`,
+			console.log("Fee Estimation Results:");
+			console.log(`  Native Fee (ETH): ${ethers.utils.formatEther(nativeFee)}`);
+			console.log(`  ZRO Fee: ${ethers.utils.formatEther(zroFee)}`);
+			console.log(
+				`\n  Total Cost (ETH): ${ethers.utils.formatEther(nativeFee.add(zroFee))}`,
 			);
-			console.error(`   Available: ${ethers.utils.formatEther(ethBalance)} ETH`);
+
+			// Check wallet balance
+			const ethBalance = await wallet.getBalance();
+			const totalRequired = nativeFee.add(zroFee);
+
+			if (ethBalance.lt(totalRequired)) {
+				console.error(`\n⚠️  Warning: Insufficient ETH balance for this refuel`);
+				console.error(
+					`   Required: ${ethers.utils.formatEther(totalRequired)} ETH`,
+				);
+				console.error(`   Available: ${ethers.utils.formatEther(ethBalance)} ETH`);
+			}
+		} catch (estimateError) {
+			// If estimation fails, provide helpful error message
+			if (estimateError instanceof Error && estimateError.message.includes("CALL_EXCEPTION")) {
+				console.error("❌ Failed to estimate refuel fee");
+				console.error("\nPossible reasons:");
+				console.error("  1. Polygon (Chain ID 137) may not be supported by this refuel contract");
+				console.error("  2. The refuel contract destination may not be configured");
+				console.error("  3. LayerZero endpoint may have an issue");
+				console.error("\nPlease verify the destination chain is supported.");
+			} else {
+				throw estimateError;
+			}
+			process.exit(1);
 		}
 	} catch (error) {
 		console.error(
