@@ -719,25 +719,23 @@ async function handleOrder(args: string[]) {
 				signer.address, // Funder = your wallet address
 			);
 
-			// Step 5: Place order
+			// Step 5: Place order using createAndPostOrder
 			const module = await import("@polymarket/clob-client");
 			const side = subcommand === "buy" ? module.Side.BUY : module.Side.SELL;
 
-			// Create the signed order
-			const signedOrder = await client.createOrder(
+			// Use createAndPostOrder as per Polymarket documentation
+			const response = await client.createAndPostOrder(
 				{
 					tokenID: tokenId,
 					price: price,
 					size: size,
 					side: side,
 				},
-				tickSize,
-			);
-
-			// Post the order to the API
-			const response = await client.postOrder(
-				signedOrder,
-				module.OrderType.GTC,
+				{
+					tickSize: tickSize,
+					negRisk: negRisk,
+				},
+				module.OrderType.GTC, // Good-Til-Cancelled
 			);
 
 			console.log("✓ Order placed successfully!");
