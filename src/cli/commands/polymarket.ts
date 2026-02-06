@@ -4,6 +4,7 @@ import { getStoredAddress, getStoredPrivateKey } from "./wallet";
 
 const HOST = "https://clob.polymarket.com";
 const GAMMA_API = "https://gamma-api.polymarket.com";
+const DATA_API = "https://data-api.polymarket.com";
 const CHAIN_ID = 137; // Polygon mainnet
 const ARBITRUM_RPC = "https://arb1.arbitrum.io/rpc";
 const ARB_USDC_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // Native USDC
@@ -125,26 +126,112 @@ async function handleBalance(args: string[]) {
 
 		try {
 			const signer = new Wallet(privateKey);
-			const client = new ClobClient(HOST, CHAIN_ID, signer);
-			
-			console.log(`Wallet Address: ${signer.address}`);
-			console.log(
-				"Note: API credential derivation requires wallet to be registered on Polymarket.",
-			);
-			console.log(
-				"\nTo use Polymarket trading features:",
-			);
-			console.log("  1. Visit https://polymarket.com");
-			console.log("  2. Connect your wallet (0x9Eb60033E4FdE90839e586DdAE9d9Edef7a5A873)");
-			console.log("  3. Complete any required setup and make a deposit");
-			console.log("  4. Your account will be activated and ready to trade");
-			console.log(
-				"\nOnce registered, you can use clawearn for:",
-			);
-			console.log("  - Market search and discovery");
-			console.log("  - Price checking");
-			console.log("  - Order placement and management");
-			console.log("  - Balance checking via API");
+			const walletAddress = signer.address;
+
+			console.log("\n📊 Fetching Polymarket balance...\n");
+
+			try {
+				// Fetch positions from Data API
+				const positionsResponse = await fetch(
+					`${DATA_API}/positions?user=${walletAddress}&limit=1000`,
+				);
+
+				if (!positionsResponse.ok) {
+					throw new Error(
+						`Failed to fetch positions: ${positionsResponse.statusText}`,
+					);
+				}
+
+				// biome-ignore lint/suspicious/noExplicitAny: API response structure
+				const positions = (await positionsResponse.json()) as any[];
+
+				// Fetch total holdings value from Data API
+				const valueResponse = await fetch(
+					`${DATA_API}/value?user=${walletAddress}`,
+				);
+
+				if (!valueResponse.ok) {
+					throw new Error(
+						`Failed to fetch value: ${valueResponse.statusText}`,
+					);
+				}
+
+				// biome-ignore lint/suspicious/noExplicitAny: API response structure
+				const valueData = (await valueResponse.json()) as any[];
+
+				let totalValue = 0;
+				if (valueData && valueData.length > 0) {
+					totalValue = valueData[0].value || 0;
+				}
+
+				// Display balance information
+				console.log(
+					"═══════════════════════════════════════════════════════════════",
+				);
+				console.log(
+					"                    POLYMARKET BALANCE                          ",
+				);
+				console.log(
+					"═══════════════════════════════════════════════════════════════",
+				);
+				console.log(`\nWallet: ${walletAddress}`);
+				console.log(`Total Holdings Value: $${totalValue.toFixed(2)} USDC`);
+
+				if (positions && positions.length > 0) {
+					console.log(`\nOpen Positions: ${positions.length}`);
+					console.log("\nTop Positions:");
+
+					// Show top 5 positions by current value
+					const sortedPositions = positions
+						.sort((a, b) => (b.currentValue || 0) - (a.currentValue || 0))
+						.slice(0, 5);
+
+					// biome-ignore lint/suspicious/noExplicitAny: Position object from API
+					sortedPositions.forEach((pos: any, index: number) => {
+						const title = pos.title || "Unknown Market";
+						const outcome = pos.outcome || "Unknown";
+						const size = pos.size || 0;
+						const avgPrice = pos.avgPrice || 0;
+						const currentValue = pos.currentValue || 0;
+						const pnl = pos.cashPnl || 0;
+
+						console.log(
+							`\n${index + 1}. ${title} - ${outcome}`,
+						);
+						console.log(
+							`   Shares: ${size.toFixed(2)} @ $${avgPrice.toFixed(2)} avg`,
+						);
+						console.log(`   Current Value: $${currentValue.toFixed(2)}`);
+						console.log(
+							`   P&L: $${pnl.toFixed(2)} (${pos.percentPnl ? pos.percentPnl.toFixed(1) : "0"}%)`,
+						);
+					});
+				} else {
+					console.log("\nNo open positions");
+				}
+
+				console.log(
+					"\n═══════════════════════════════════════════════════════════════\n",
+				);
+			} catch (apiError) {
+				console.error("❌ Could not fetch balance from Polymarket API");
+				console.error(
+					"\nNote: Your wallet may not have any activity on Polymarket yet.",
+				);
+				console.error("To get started:");
+				console.error("  1. Visit https://polymarket.com");
+				console.error(`  2. Connect wallet: ${walletAddress}`);
+				console.error("  3. Make a deposit and place some trades");
+				console.error(
+					"  4. Try again to see your positions and balance\n",
+				);
+
+				if (apiError instanceof Error) {
+					console.error(
+						`Error details: ${apiError.message}`,
+					);
+				}
+			}
 		} catch (error) {
 			console.error(
 				"Failed to check balance:",
