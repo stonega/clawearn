@@ -633,37 +633,14 @@ async function handleOrder(args: string[]) {
 		try {
 			const signer = new Wallet(privateKey);
 
-			// Create unauthenticated client first to get market details
-			console.log("Initializing client...");
-			const publicClient = new ClobClient(HOST, CHAIN_ID, signer);
-
-			// Attempt to create/derive API credentials for the wallet
-			console.log("Creating or deriving API credentials...");
-			let apiCreds;
-			try {
-				apiCreds = await publicClient.createOrDeriveApiKey();
-			} catch (apiError) {
-				console.log(
-					"Note: Could not create API credentials, proceeding with available options...",
-				);
-				// Continue without credentials - some operations may still work
-				apiCreds = undefined;
-			}
-
-			// Initialize authenticated client with EOA signature type
-			const client = new ClobClient(
-				HOST,
-				CHAIN_ID,
-				signer,
-				apiCreds,
-				0, // Signature type 0 = EOA
-				signer.address, // Funder = your wallet address
-			);
+			// Use public client for fetching market details (no auth needed)
+			console.log("Initializing public client for market details...");
+			const publicClient = new ClobClient(HOST, CHAIN_ID);
 
 			console.log("Fetching market details...");
 			let market;
 			try {
-				market = await client.getMarket(tokenId);
+				market = await publicClient.getMarket(tokenId);
 
 				// Check if market is an error response
 				if ((market as any).error) {
@@ -711,11 +688,22 @@ async function handleOrder(args: string[]) {
 				`Placing ${subcommand.toUpperCase()} order: ${size} shares @ $${price}`,
 			);
 
+			// Initialize authenticated client with EOA signature type for order placement
+			console.log("Initializing authenticated client for order placement...");
+			const authedClient = new ClobClient(
+				HOST,
+				CHAIN_ID,
+				signer,
+				undefined, // No API credentials needed for EOA
+				0, // Signature type 0 = EOA
+				signer.address, // Funder = your wallet address
+			);
+
 			const module = await import("@polymarket/clob-client");
 			const side = subcommand === "buy" ? module.Side.BUY : module.Side.SELL;
 
 			// Create the signed order
-			const signedOrder = await client.createOrder(
+			const signedOrder = await authedClient.createOrder(
 				{
 					tokenID: tokenId,
 					price: price,
@@ -726,7 +714,7 @@ async function handleOrder(args: string[]) {
 			);
 
 			// Post the order to the API
-			const response = await client.postOrder(
+			const response = await authedClient.postOrder(
 				signedOrder,
 				module.OrderType.GTC,
 			);
