@@ -348,15 +348,84 @@ async function handleMarket(args: string[]) {
 
 		if (!marketId) {
 			console.error("Usage: clawearn polymarket market info --market-id <id>");
+			console.error("\nNote: market-id can be either:");
+			console.error(
+				"  - A Gamma Event ID (from market search results)",
+			);
+			console.error("  - A CLOB condition ID (for direct lookup)");
 			process.exit(1);
 		}
 
 		try {
 			const client = new ClobClient(HOST, CHAIN_ID);
-			const market = await client.getMarket(marketId);
 
-			console.log("Market details:");
-			console.log(JSON.stringify(market, null, 2));
+			// Try to fetch as condition ID first (CLOB format)
+			let market;
+			let isConditionId = false;
+
+			try {
+				market = await client.getMarket(marketId);
+				isConditionId = true;
+			} catch (e) {
+				// If that fails, try to fetch from Gamma API to convert Event ID to condition ID
+				try {
+					// biome-ignore lint/suspicious/noExplicitAny: Gamma API response
+					const gammaResponse = await fetch(
+						`${GAMMA_API}/events/${marketId}`,
+					);
+
+					if (gammaResponse.ok) {
+						// biome-ignore lint/suspicious/noExplicitAny: Gamma Event structure
+						const event = (await gammaResponse.json()) as any;
+						console.log("\n📌 Gamma Event Found:");
+						console.log(`   Title: ${event.title}`);
+						console.log(`   ID: ${event.id}`);
+
+						if (event.markets && event.markets.length > 0) {
+							console.log(
+								`\n   ${event.markets.length} markets in this event:`,
+							);
+							// biome-ignore lint/suspicious/noExplicitAny: Market object from Gamma
+							event.markets.forEach((mkt: any, idx: number) => {
+								console.log(
+									`   ${idx + 1}. ${mkt.title} (Condition ID: ${mkt.conditionId})`,
+								);
+							});
+							console.log(
+								"\n   Use one of the Condition IDs above to place orders.",
+							);
+							return;
+						}
+					} else {
+						throw new Error(
+							`Market not found: ${marketId}`,
+						);
+					}
+				} catch (gammaError) {
+					throw new Error(
+						`Market not found with ID ${marketId}. ` +
+						`The ID might be invalid or the market may have expired.`,
+					);
+				}
+			}
+
+			// Display CLOB market details
+			console.log(
+				"\n═══════════════════════════════════════════════════════════════",
+			);
+			console.log("                       MARKET DETAILS                        ");
+			console.log(
+				"═══════════════════════════════════════════════════════════════\n",
+			);
+			console.log(
+				JSON.stringify(market, null, 2),
+			);
+
+			if (isConditionId) {
+				console.log(
+					"\n✓ This is a valid CLOB Condition ID. Use it with 'order buy/sell --token-id'",
+				);
+			}
 		} catch (error) {
 			console.error(
 				"Failed to fetch market info:",
@@ -452,7 +521,44 @@ async function handleOrder(args: string[]) {
 			);
 
 			console.log("Fetching market details...");
-			const market = await authedClient.getMarket(tokenId);
+			let market;
+			try {
+				market = await authedClient.getMarket(tokenId);
+			} catch (marketError) {
+				console.error(
+					`❌ Market not found with token ID: ${tokenId}`,
+				);
+				console.error("\nPossible issues:");
+				console.error(
+					"  1. If you got this ID from 'market search', it might be a Gamma Event ID",
+				);
+				console.error(
+					"  2. Use 'market info --market-id <id>' to get the condition ID first",
+				);
+				console.error("  3. The market may have expired or been removed");
+				console.error(
+					"\nTo find a market and place an order:",
+				);
+				console.error(
+					"  1. clawearn polymarket market search --query 'bitcoin'",
+				);
+				console.error(
+					"  2. Pick a market from results",
+				);
+				console.error(
+					"  3. clawearn polymarket market info --market-id <gamma-id>",
+				);
+				console.error("  4. Use the condition ID from market info for placing orders");
+				process.exit(1);
+			}
+
+			if (!market || !market.tickSize) {
+				console.error(
+					"❌ Invalid market data received",
+				);
+				console.error("Market details:", market);
+				process.exit(1);
+			}
 
 			console.log(
 				`Placing ${subcommand.toUpperCase()} order: ${size} shares @ $${price}`,
@@ -981,15 +1087,18 @@ BALANCE COMMANDS:
    balance check        Check wallet connection (uses stored wallet)
 
 MARKET COMMANDS:
-   market search
-     --query <query>              Search query
+    market search
+      --query <query>              Search query
+      Returns: Gamma Event IDs (for use with market info)
 
-   market list
-     --tag <tag>                  Filter by tag
-     --limit <n>                  Results limit (default: 10)
+    market list
+      --tag <tag>                  Filter by tag
+      --limit <n>                  Results limit (default: 10)
+      Returns: Gamma Event IDs (for use with market info)
 
-   market info
-     --market-id <id>             Market ID
+    market info
+      --market-id <id>             Market ID (Gamma Event ID or Condition ID)
+      Returns: Event details with Condition IDs (for use with order buy/sell)
 
 PRICE COMMANDS:
    price get
@@ -1033,19 +1142,27 @@ REFUEL COMMANDS:
       --recipient <address>        Recipient address (default: your address)
 
 EXAMPLES:
-   # Search for markets
-   clawearn polymarket market search --query "bitcoin 2025"
 
-   # Place a buy order (uses stored wallet)
-   clawearn poly order buy \\
-     --token-id 0x... \\
-     --price 0.50 \\
-     --size 10
+WORKFLOW: Search → Get ID → Place Order
+    # 1. Search for a market by name
+    clawearn polymarket market search --query "bitcoin price 2025"
+    # Returns: List of Gamma Event IDs
 
-   # Check open orders
-   clawearn poly order list-open
+    # 2. Get market details and condition IDs
+    clawearn polymarket market info --market-id <gamma-event-id>
+    # Returns: List of markets with Condition IDs
 
-   # View your wallet address
-   clawearn polymarket account
+    # 3. Place a buy order using the Condition ID
+    clawearn poly order buy \\
+      --token-id <condition-id> \\
+      --price 0.50 \\
+      --size 10
+
+OTHER EXAMPLES:
+    # Check open orders
+    clawearn poly order list-open
+
+    # View your wallet address
+    clawearn polymarket account
 `);
 }
