@@ -128,26 +128,17 @@ async function handleBalance(args: string[]) {
 			const client = new ClobClient(HOST, CHAIN_ID, signer);
 			const apiCreds = await client.createOrDeriveApiKey();
 
-			const signatureType = parseInt(
-				getArg(args, "--signature-type") || "0",
-				10,
-			);
-			const funderAddress = getArg(args, "--funder") || signer.address;
-
 			const _authedClient = new ClobClient(
 				HOST,
 				CHAIN_ID,
 				signer,
 				apiCreds,
-				signatureType,
-				funderAddress,
 			);
 
 			// Note: For full balance data, would need to implement balance fetch
 			// from user positions API
 			console.log(`Wallet Address: ${signer.address}`);
 			console.log("API Credentials derived successfully");
-			console.log("Use --funder flag for proxy wallet address if applicable");
 		} catch (error) {
 			console.error(
 				"Failed to check balance:",
@@ -155,19 +146,6 @@ async function handleBalance(args: string[]) {
 			);
 			process.exit(1);
 		}
-	} else if (subcommand === "pocket-money") {
-		const amount = getArg(args, "--amount");
-
-		if (!amount) {
-			console.error(
-				"Usage: clawearn polymarket balance pocket-money --amount <amount>",
-			);
-			process.exit(1);
-		}
-
-		console.log(`Requesting ${amount} USDC pocket money...`);
-		console.log("Note: Pocket money requires testnet setup or faucet access");
-		console.log("For production, deposit via Polymarket.com interface");
 	} else {
 		console.error("Usage: clawearn polymarket balance [check|pocket-money]");
 		process.exit(1);
@@ -324,12 +302,10 @@ async function handleOrder(args: string[]) {
 		const tokenId = getArg(args, "--token-id");
 		const price = parseFloat(getArg(args, "--price") || "0");
 		const size = parseFloat(getArg(args, "--size") || "1");
-		const signatureType = parseInt(getArg(args, "--signature-type") || "0", 10);
-		const funder = getArg(args, "--funder");
 
 		if (!tokenId || price === 0 || size === 0) {
 			console.error(
-				`Usage: clawearn polymarket order ${subcommand} --token-id <id> --price <price> --size <size> [--signature-type <0|1|2>] [--funder <address>]`,
+				`Usage: clawearn polymarket order ${subcommand} --token-id <id> --price <price> --size <size>`,
 			);
 			process.exit(1);
 		}
@@ -346,16 +322,12 @@ async function handleOrder(args: string[]) {
 			console.log("Creating API credentials...");
 			const userApiCreds = await client.createOrDeriveApiKey();
 
-			const funderAddress = funder || signer.address;
-
 			console.log("Initializing authenticated client...");
 			const authedClient = new ClobClient(
 				HOST,
 				CHAIN_ID,
 				signer,
 				userApiCreds,
-				signatureType,
-				funderAddress,
 			);
 
 			console.log("Fetching market details...");
@@ -403,19 +375,11 @@ async function handleOrder(args: string[]) {
 			const client = new ClobClient(HOST, CHAIN_ID, signer);
 			const userApiCreds = await client.createOrDeriveApiKey();
 
-			const signatureType = parseInt(
-				getArg(args, "--signature-type") || "0",
-				10,
-			);
-			const funder = getArg(args, "--funder") || signer.address;
-
 			const authedClient = new ClobClient(
 				HOST,
 				CHAIN_ID,
 				signer,
 				userApiCreds,
-				signatureType,
-				funder,
 			);
 
 			console.log("Fetching open orders...");
@@ -445,19 +409,11 @@ async function handleOrder(args: string[]) {
 			const client = new ClobClient(HOST, CHAIN_ID, signer);
 			const userApiCreds = await client.createOrDeriveApiKey();
 
-			const signatureType = parseInt(
-				getArg(args, "--signature-type") || "0",
-				10,
-			);
-			const funder = getArg(args, "--funder") || signer.address;
-
 			const authedClient = new ClobClient(
 				HOST,
 				CHAIN_ID,
 				signer,
 				userApiCreds,
-				signatureType,
-				funder,
 			);
 
 			console.log(`Cancelling order ${orderId}...`);
@@ -572,10 +528,6 @@ async function handleDeposit(args: string[]) {
 		const wallet = new Wallet(privateKey, provider);
 
 		console.log("Fetching deposit address from Polymarket...");
-		// For the deposit address generation, we technically need the *destination* wallet on Polymarket.
-		// Usually this is the same EOA if using an EOA, or the proxy if using a proxy.
-		// However, the Bridge API takes the "Polymarket wallet address".
-		// Assuming the user wants to deposit to THIS wallet's address on Polymarket.
 		const targetAddress = await fetchDepositAddress(wallet.address);
 
 		console.log(`Deposit Address (Arbitrum): ${targetAddress}`);
@@ -889,7 +841,6 @@ ACCOUNT COMMANDS:
 
 BALANCE COMMANDS:
    balance check        Check wallet connection (uses stored wallet)
-     --signature-type <0|1|2>     0=EOA (default), uses stored wallet
 
 MARKET COMMANDS:
    market search
@@ -915,7 +866,6 @@ ORDER COMMANDS:
      --token-id <id>              Token ID
      --price <price>              Price per share
      --size <size>                Number of shares
-     --signature-type <0|1|2>     0=EOA (default)
 
    order sell
      --token-id <id>              Token ID
