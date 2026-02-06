@@ -365,47 +365,172 @@ async function handleMarket(args: string[]) {
 
 			try {
 				market = await client.getMarket(marketId);
+
+				// Check if market is an error response
+				// biome-ignore lint/suspicious/noExplicitAny: Market object from CLOB
+				if ((market as any).error) {
+					throw new Error(`CLOB Error: ${(market as any).error}`);
+				}
+
 				isConditionId = true;
-			} catch (e) {
+			} catch (clobError) {
 				// If that fails, try to fetch from Gamma API to convert Event ID to condition ID
+				// Note: CLOB client errors are logged to console by the library
+				console.log("\n");  // Add spacing
+				console.log(
+					"Not a CLOB Condition ID, attempting to fetch as Gamma Event ID...",
+				);
+
 				try {
+					// Try the events endpoint first
 					// biome-ignore lint/suspicious/noExplicitAny: Gamma API response
-					const gammaResponse = await fetch(
+					let gammaResponse = await fetch(
 						`${GAMMA_API}/events/${marketId}`,
 					);
 
-					if (gammaResponse.ok) {
-						// biome-ignore lint/suspicious/noExplicitAny: Gamma Event structure
-						const event = (await gammaResponse.json()) as any;
-						console.log("\n📌 Gamma Event Found:");
-						console.log(`   Title: ${event.title}`);
-						console.log(`   ID: ${event.id}`);
+					let event;
 
-						if (event.markets && event.markets.length > 0) {
-							console.log(
-								`\n   ${event.markets.length} markets in this event:`,
-							);
-							// biome-ignore lint/suspicious/noExplicitAny: Market object from Gamma
-							event.markets.forEach((mkt: any, idx: number) => {
-								console.log(
-									`   ${idx + 1}. ${mkt.title} (Condition ID: ${mkt.conditionId})`,
+					if (!gammaResponse.ok) {
+						// Try alternative Gamma endpoint that might be used for event details
+						console.log(
+							"  (events endpoint failed, trying alternatives...)",
+						);
+
+						// Try searching for it instead
+						gammaResponse = await fetch(
+							`${GAMMA_API}/public-search?q=${encodeURIComponent(marketId)}&limit_per_type=1`,
+						);
+
+						if (gammaResponse.ok) {
+							// biome-ignore lint/suspicious/noExplicitAny: Search response
+							const searchResults = (await gammaResponse.json()) as any;
+
+							if (
+								searchResults.events &&
+								searchResults.events.length > 0
+							) {
+								event = searchResults.events[0];
+							} else {
+								throw new Error(
+									`Event not found with ID: ${marketId}`,
 								);
-							});
-							console.log(
-								"\n   Use one of the Condition IDs above to place orders.",
+							}
+						} else {
+							throw new Error(
+								`Failed to fetch from Gamma API: ${gammaResponse.statusText}`,
 							);
-							return;
 						}
 					} else {
-						throw new Error(
-							`Market not found: ${marketId}`,
+						// biome-ignore lint/suspicious/noExplicitAny: Gamma Event structure
+						event = (await gammaResponse.json()) as any;
+					}
+
+					if (!event) {
+						throw new Error("No event data returned");
+					}
+
+					console.log("\n📌 Gamma Event Found:");
+					console.log(`   Title: ${event.title || "Unknown"}`);
+					console.log(`   ID: ${event.id}`);
+
+					// Fetch markets for this event
+					let markets = event.markets;
+
+					if (!markets || markets.length === 0) {
+						// Try fetching markets separately
+						console.log("   Fetching associated markets...");
+
+						try {
+							// biome-ignore lint/suspicious/noExplicitAny: Market list response
+							const marketsResponse = await fetch(
+								`${GAMMA_API}/markets?event_id=${event.id}&limit=100`,
+							);
+
+							if (marketsResponse.ok) {
+								// biome-ignore lint/suspicious/noExplicitAny: Markets array
+								markets = (await marketsResponse.json()) as any[];
+							}
+						} catch (e) {
+							console.log("   Could not fetch markets separately");
+						}
+					}
+
+					if (markets && markets.length > 0) {
+						console.log(
+							`\n   ${markets.length} markets in this event:`,
 						);
+
+						// Try to fetch full market details to get titles
+						// biome-ignore lint/suspicious/noExplicitAny: Market object from Gamma
+						for (let idx = 0; idx < Math.min(10, markets.length); idx++) {
+							const mkt = markets[idx];
+							const conditionId = mkt.conditionId || mkt.condition_id || mkt.id || "N/A";
+							let title = mkt.title || mkt.outcome || "Unknown";
+
+							// Try to fetch full market details if we only have condition ID
+							if (
+								title === "Unknown" &&
+								conditionId !== "N/A"
+							) {
+								try {
+									// biome-ignore lint/suspicious/noExplicitAny: CLOB market response
+									const clbMarket = await (
+										new ClobClient(HOST, CHAIN_ID)
+									).getMarket(conditionId as string);
+
+									if (
+										clbMarket &&
+										!(clbMarket as any).error
+									) {
+										// biome-ignore lint/suspicious/noExplicitAny: CLOB market object
+										title = (clbMarket as any).question || title;
+									}
+								} catch (e) {
+									// Keep using "Unknown" if fetch fails
+								}
+							}
+
+							console.log(
+								`   ${idx + 1}. ${title}`,
+							);
+							console.log(
+								`      Condition ID: ${conditionId}`,
+							);
+						}
+
+						if (markets.length > 10) {
+							console.log(
+								`   ... and ${markets.length - 10} more markets`,
+							);
+						}
+
+						console.log(
+							"\n   Use one of the Condition IDs above to place orders.",
+						);
+						return;
+					} else {
+						console.error(
+							"   No markets found for this event",
+						);
+						process.exit(1);
 					}
 				} catch (gammaError) {
-					throw new Error(
-						`Market not found with ID ${marketId}. ` +
-						`The ID might be invalid or the market may have expired.`,
+					console.error(
+						`\n❌ Could not fetch event details`,
 					);
+					console.error(
+						`   ID: ${marketId}`,
+					);
+					console.error(
+						`   Error: ${gammaError instanceof Error ? gammaError.message : gammaError}`,
+					);
+					console.error(
+						"\n   This ID might be invalid or the market may have expired.",
+					);
+					console.error(
+						"   Try: clawearn polymarket market search --query 'bitcoin'",
+					);
+					process.exit(1);
 				}
 			}
 
