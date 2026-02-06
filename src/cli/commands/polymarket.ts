@@ -632,57 +632,32 @@ async function handleOrder(args: string[]) {
 		try {
 			const signer = new Wallet(privateKey);
 
-			// Use public client for fetching market details (no auth needed)
-			console.log("Initializing public client for market details...");
-			const publicClient = new ClobClient(HOST, CHAIN_ID);
+			// Default tick size and negRisk for market
+			// These will be used if we can't fetch market details
+			// Most Polymarket orders use 0.001 tick size
+			let tickSize: "0.1" | "0.01" | "0.001" | "0.0001" = "0.001";
+			let negRisk = false;
 
-			console.log("Fetching market details...");
-			let market;
+			// Attempt to fetch market details if possible (for tick size info)
+			// This is optional - the CLOB API will validate these on order submission
 			try {
-				// tokenId can be either a Condition ID (hex) or ERC1155 token ID (numeric)
-				// CLOB's getMarket expects a Condition ID, so we try that first
-				market = await publicClient.getMarket(tokenId);
-
-				// Check if market is an error response
-				if ((market as any).error) {
-					throw new Error(`Market Error: ${(market as any).error}`);
+				console.log("Fetching market details for tick size...");
+				const publicClient = new ClobClient(HOST, CHAIN_ID);
+				
+				// Try to fetch with the numeric token ID as a condition ID (long shot)
+				// Most markets use 0.001 tick size anyway
+				const market = await publicClient.getMarket(tokenId);
+				if (market && !(market as any).error) {
+					const fetchedTickSize = (market as any).tickSize || (market as any).minimum_tick_size;
+					if (fetchedTickSize) {
+						tickSize = String(fetchedTickSize) as "0.1" | "0.01" | "0.001" | "0.0001";
+						console.log(`✓ Found market tick size: ${tickSize}`);
+					}
+					negRisk = (market as any).negRisk || false;
 				}
 			} catch (marketError) {
-				console.error(
-					`❌ Market not found with ID: ${tokenId}`,
-				);
-				console.error("\nPossible issues:");
-				console.error(
-					"  1. The Token ID might be invalid or the market may have expired",
-				);
-				console.error(
-					"  2. Make sure you're using the numeric Token ID (not Condition ID)",
-				);
-				console.error(
-					"\nTo find a market and place an order:",
-				);
-				console.error(
-					"  1. clawearn polymarket market search --query 'bitcoin'",
-				);
-				console.error(
-					"  2. Pick a market from results",
-				);
-				console.error(
-					"  3. clawearn polymarket market info --market-id <gamma-id>",
-				);
-				console.error("  4. Use the YES or NO Token ID for placing orders");
-				process.exit(1);
-			}
-
-			// Use minimum_tick_size or tickSize depending on response format
-			const tickSize = (market as any).tickSize || (market as any).minimum_tick_size || 0.001;
-			const negRisk = (market as any).negRisk || false;
-
-			if (!market) {
-				console.error(
-					"❌ Invalid market data received",
-				);
-				process.exit(1);
+				// Market fetch failed, but we can proceed with defaults
+				console.log("ℹ Using default tick size 0.001 (will be validated by API)");
 			}
 
 			console.log(
