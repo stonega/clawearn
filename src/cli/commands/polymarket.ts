@@ -468,6 +468,7 @@ async function handleMarket(args: string[]) {
 							const conditionId = mkt.conditionId || mkt.condition_id || mkt.id || "N/A";
 							
 							// Parse clobTokenIds from Gamma API (it's a JSON string array)
+							// These are ERC1155 token IDs used for order placement
 							let tokenIds: string[] = [];
 							if (mkt.clobTokenIds) {
 								try {
@@ -483,18 +484,16 @@ async function handleMarket(args: string[]) {
 							console.log(
 								`   ${idx + 1}. ${title}`,
 							);
+							console.log(
+								`      Condition ID: ${conditionId}`,
+							);
 							if (tokenIds.length > 0) {
 								tokenIds.forEach((tId, tIdx) => {
 									const outcomeLabel = tIdx === 0 ? "YES" : "NO";
 									console.log(
-										`      ${outcomeLabel} - Token ID: ${tId}`,
+										`      ${outcomeLabel} Token ID: ${tId}`,
 									);
 								});
-							}
-							if (conditionId !== "N/A") {
-								console.log(
-									`      Condition ID: ${conditionId}`,
-								);
 							}
 						}
 
@@ -505,7 +504,7 @@ async function handleMarket(args: string[]) {
 						}
 
 						console.log(
-							"\n   Use one of the Condition IDs (0x...) above to place orders.",
+							"\n   Use one of the Token IDs above to place orders.",
 						);
 						return;
 					} else {
@@ -654,10 +653,10 @@ async function handleOrder(args: string[]) {
 				);
 				console.error("\nPossible issues:");
 				console.error(
-					"  1. The Condition ID might be invalid or the market may have expired",
+					"  1. The Token ID might be invalid or the market may have expired",
 				);
 				console.error(
-					"  2. Use the Condition ID (hex format), not the ERC1155 Token ID",
+					"  2. Make sure you're using the numeric Token ID (not Condition ID)",
 				);
 				console.error(
 					"\nTo find a market and place an order:",
@@ -671,7 +670,7 @@ async function handleOrder(args: string[]) {
 				console.error(
 					"  3. clawearn polymarket market info --market-id <gamma-id>",
 				);
-				console.error("  4. Copy the Condition ID (0x...) and use it for placing orders");
+				console.error("  4. Use the YES or NO Token ID for placing orders");
 				process.exit(1);
 			}
 
@@ -1253,7 +1252,7 @@ MARKET COMMANDS:
 
     market info
       --market-id <id>             Market ID (Gamma Event ID)
-      Returns: Event details with Condition IDs (for use with order buy/sell)
+      Returns: Event details with Token IDs (for use with order buy/sell)
 
 PRICE COMMANDS:
    price get
@@ -1265,12 +1264,12 @@ PRICE COMMANDS:
 
 ORDER COMMANDS:
     order buy
-      --token-id <id>              Condition ID (0x... format from market info)
+      --token-id <id>              Token ID (numeric, from market info)
       --price <price>              Price per share
       --size <size>                Number of shares
 
     order sell
-      --token-id <id>              Condition ID (0x... format from market info)
+      --token-id <id>              Token ID (numeric, from market info)
       --price <price>              Price per share
       --size <size>                Number of shares
 
@@ -1303,13 +1302,13 @@ WORKFLOW: Search → Get ID → Place Order
     clawearn polymarket market search --query "bitcoin price 2025"
     # Returns: List of Gamma Event IDs
 
-    # 2. Get market details and condition IDs
+    # 2. Get market details and token IDs
     clawearn polymarket market info --market-id <gamma-event-id>
-    # Returns: List of markets with Condition IDs (0x... format)
+    # Returns: List of markets with Token IDs (YES and NO outcomes)
 
-    # 3. Place a buy order using a Condition ID
+    # 3. Place a buy order using a Token ID
     clawearn polymarket order buy \\
-      --token-id <condition-id> \\
+      --token-id <token-id> \\
       --price 0.50 \\
       --size 10
 
