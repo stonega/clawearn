@@ -505,7 +505,7 @@ async function handleMarket(args: string[]) {
 						}
 
 						console.log(
-							"\n   Use one of the Token IDs above to place orders.",
+							"\n   Use one of the Condition IDs (0x...) above to place orders.",
 						);
 						return;
 					} else {
@@ -640,6 +640,8 @@ async function handleOrder(args: string[]) {
 			console.log("Fetching market details...");
 			let market;
 			try {
+				// tokenId can be either a Condition ID (hex) or ERC1155 token ID (numeric)
+				// CLOB's getMarket expects a Condition ID, so we try that first
 				market = await publicClient.getMarket(tokenId);
 
 				// Check if market is an error response
@@ -648,14 +650,14 @@ async function handleOrder(args: string[]) {
 				}
 			} catch (marketError) {
 				console.error(
-					`❌ Market not found with token ID: ${tokenId}`,
+					`❌ Market not found with ID: ${tokenId}`,
 				);
 				console.error("\nPossible issues:");
 				console.error(
-					"  1. The Token ID might be invalid or the market may have expired",
+					"  1. The Condition ID might be invalid or the market may have expired",
 				);
 				console.error(
-					"  2. Make sure you're using the Token ID (not Condition ID or Event ID)",
+					"  2. Use the Condition ID (hex format), not the ERC1155 Token ID",
 				);
 				console.error(
 					"\nTo find a market and place an order:",
@@ -669,7 +671,7 @@ async function handleOrder(args: string[]) {
 				console.error(
 					"  3. clawearn polymarket market info --market-id <gamma-id>",
 				);
-				console.error("  4. Use the Token ID from market info for placing orders");
+				console.error("  4. Copy the Condition ID (0x...) and use it for placing orders");
 				process.exit(1);
 			}
 
@@ -1251,7 +1253,7 @@ MARKET COMMANDS:
 
     market info
       --market-id <id>             Market ID (Gamma Event ID)
-      Returns: Event details with Token IDs (for use with order buy/sell)
+      Returns: Event details with Condition IDs (for use with order buy/sell)
 
 PRICE COMMANDS:
    price get
@@ -1262,15 +1264,15 @@ PRICE COMMANDS:
      --token-id <id>              Token ID
 
 ORDER COMMANDS:
-   order buy
-     --token-id <id>              Token ID
-     --price <price>              Price per share
-     --size <size>                Number of shares
+    order buy
+      --token-id <id>              Condition ID (0x... format from market info)
+      --price <price>              Price per share
+      --size <size>                Number of shares
 
-   order sell
-     --token-id <id>              Token ID
-     --price <price>              Price per share
-     --size <size>                Number of shares
+    order sell
+      --token-id <id>              Condition ID (0x... format from market info)
+      --price <price>              Price per share
+      --size <size>                Number of shares
 
    order list-open                List your open orders
 
@@ -1301,13 +1303,13 @@ WORKFLOW: Search → Get ID → Place Order
     clawearn polymarket market search --query "bitcoin price 2025"
     # Returns: List of Gamma Event IDs
 
-    # 2. Get market details and token IDs
+    # 2. Get market details and condition IDs
     clawearn polymarket market info --market-id <gamma-event-id>
-    # Returns: List of markets with Token IDs
+    # Returns: List of markets with Condition IDs (0x... format)
 
-    # 3. Place a buy order using the Token ID
+    # 3. Place a buy order using a Condition ID
     clawearn polymarket order buy \\
-      --token-id <token-id> \\
+      --token-id <condition-id> \\
       --price 0.50 \\
       --size 10
 
