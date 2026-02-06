@@ -7,8 +7,12 @@ const GAMMA_API = "https://gamma-api.polymarket.com";
 const DATA_API = "https://data-api.polymarket.com";
 const CHAIN_ID = 137; // Polygon mainnet
 const ARBITRUM_RPC = "https://arb1.arbitrum.io/rpc";
-const ARB_USDC_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // Native USDC
-const ARB_USDCE_ADDRESS = "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"; // Bridged USDC.e
+const POLYGON_RPC = "https://polygon-rpc.com";
+const ARB_USDC_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // Native USDC on Arbitrum
+const ARB_USDCE_ADDRESS = "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"; // Bridged USDC.e on Arbitrum
+const POLYGON_USDC_ADDRESS = "0x2791bca1f2de4661ed88a30c99a7a9449aa84174"; // USDC on Polygon
+const POLYGON_POL_ADDRESS = "0x0000000000000000000000000000000000001010"; // POL (native) on Polygon
+const USDC_DECIMALS = 6;
 
 /**
  * Run polymarket subcommand
@@ -131,6 +135,27 @@ async function handleBalance(args: string[]) {
 			console.log("\n📊 Fetching Polymarket balance...\n");
 
 			try {
+				// Fetch balances on Polygon
+				const polygonProvider = new ethers.providers.JsonRpcProvider(POLYGON_RPC);
+				const polygonWallet = new ethers.Wallet(privateKey, polygonProvider);
+
+				// Fetch USDC balance on Polygon
+				const usdcContract = new ethers.Contract(
+					POLYGON_USDC_ADDRESS,
+					[
+						"function balanceOf(address owner) view returns (uint256)",
+						"function decimals() view returns (uint8)",
+					],
+					polygonProvider,
+				);
+
+				const usdcBalance = await usdcContract.balanceOf(walletAddress);
+				const usdcFormatted = ethers.utils.formatUnits(usdcBalance, USDC_DECIMALS);
+
+				// Fetch POL balance on Polygon
+				const polBalance = await polygonProvider.getBalance(walletAddress);
+				const polFormatted = ethers.utils.formatEther(polBalance);
+
 				// Fetch positions from Data API
 				const positionsResponse = await fetch(
 					`${DATA_API}/positions?user=${walletAddress}&limit=1000`,
@@ -175,7 +200,10 @@ async function handleBalance(args: string[]) {
 					"═══════════════════════════════════════════════════════════════",
 				);
 				console.log(`\nWallet: ${walletAddress}`);
-				console.log(`Total Holdings Value: $${totalValue.toFixed(2)} USDC`);
+				console.log("\n💰 Token Balances (Polygon):");
+				console.log(`   USDC:  ${usdcFormatted} USDC`);
+				console.log(`   POL:   ${polFormatted} POL`);
+				console.log(`\n📈 Portfolio Value: $${totalValue.toFixed(2)} USDC`);
 
 				if (positions && positions.length > 0) {
 					console.log(`\nOpen Positions: ${positions.length}`);
