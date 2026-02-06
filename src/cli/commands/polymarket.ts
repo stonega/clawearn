@@ -764,7 +764,8 @@ async function handleGasRefuel(args: string[]) {
 
 		console.log("\nSending refuel transaction...");
 
-		// Execute refuel with estimated fee
+		// Execute refuel with estimated fee and manual gas limit
+		// Cross-chain transactions typically need 200k-500k gas
 		const tx = await refuelContract.gasRefuel(
 			POLYGON_CHAIN_ID,
 			ethers.constants.AddressZero,
@@ -772,6 +773,7 @@ async function handleGasRefuel(args: string[]) {
 			recipient,
 			{
 				value: totalCost,
+				gasLimit: ethers.BigNumber.from("300000"), // Manual gas limit for cross-chain refuel
 			},
 		);
 
