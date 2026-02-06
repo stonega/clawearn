@@ -464,40 +464,32 @@ async function handleMarket(args: string[]) {
 						// biome-ignore lint/suspicious/noExplicitAny: Market object from Gamma
 						for (let idx = 0; idx < Math.min(10, markets.length); idx++) {
 							const mkt = markets[idx];
-							const tokenId = mkt.tokenId || mkt.token_id || "N/A";
+							let title = mkt.title || mkt.question || mkt.outcome || "Unknown";
 							const conditionId = mkt.conditionId || mkt.condition_id || mkt.id || "N/A";
-							let title = mkt.title || mkt.outcome || "Unknown";
-
-							// Try to fetch full market details if we only have condition ID
-							if (
-								title === "Unknown" &&
-								conditionId !== "N/A"
-							) {
+							
+							// Parse clobTokenIds from Gamma API (it's a JSON string array)
+							let tokenIds: string[] = [];
+							if (mkt.clobTokenIds) {
 								try {
-									// biome-ignore lint/suspicious/noExplicitAny: CLOB market response
-									const clbMarket = await (
-										new ClobClient(HOST, CHAIN_ID)
-									).getMarket(conditionId as string);
-
-									if (
-										clbMarket &&
-										!(clbMarket as any).error
-									) {
-										// biome-ignore lint/suspicious/noExplicitAny: CLOB market object
-										title = (clbMarket as any).question || title;
-									}
+									tokenIds = JSON.parse(mkt.clobTokenIds);
 								} catch (e) {
-									// Keep using "Unknown" if fetch fails
+									// If parsing fails, try as direct array
+									tokenIds = Array.isArray(mkt.clobTokenIds)
+										? mkt.clobTokenIds
+										: [];
 								}
 							}
 
 							console.log(
 								`   ${idx + 1}. ${title}`,
 							);
-							if (tokenId !== "N/A") {
-								console.log(
-									`      Token ID: ${tokenId}`,
-								);
+							if (tokenIds.length > 0) {
+								tokenIds.forEach((tId, tIdx) => {
+									const outcomeLabel = tIdx === 0 ? "YES" : "NO";
+									console.log(
+										`      ${outcomeLabel} - Token ID: ${tId}`,
+									);
+								});
 							}
 							if (conditionId !== "N/A") {
 								console.log(
