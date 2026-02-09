@@ -1,7 +1,7 @@
 ---
 name: polymarket-trading
-version: 1.2.0
-description: Trade prediction markets on Polymarket with your OpenClaw bot. Market discovery, price data, and automated order execution. Now with POL gas refuel support.
+version: 1.3.0
+description: Complete guide to placing orders on Polymarket with clawearn. Market discovery, price data, and automated order execution with comprehensive troubleshooting.
 homepage: https://www.polymarket.com
 documentation: https://docs.polymarket.com
 metadata: 
@@ -174,9 +174,7 @@ clawearn polymarket price book --token-id TOKEN_ID
 clawearn polymarket order buy \
   --token-id TOKEN_ID \
   --price 0.50 \
-  --size 10 \
-  --private-key $YOUR_PRIVATE_KEY \
-  --signature-type 0
+  --size 10
 ```
 
 **Place a sell order:**
@@ -184,9 +182,7 @@ clawearn polymarket order buy \
 clawearn polymarket order sell \
   --token-id TOKEN_ID \
   --price 0.75 \
-  --size 5 \
-  --private-key $YOUR_PRIVATE_KEY \
-  --signature-type 0
+  --size 5
 ```
 
 **View open orders:**
@@ -199,6 +195,52 @@ clawearn polymarket order list-open
 clawearn polymarket order cancel \
   --order-id ORDER_ID
 ```
+
+#### Order Placement Notes
+
+The clawearn CLI automatically uses your stored wallet for all orders. No need to pass `--private-key` or `--signature-type` — they're handled internally.
+
+**How it works:**
+1. Wallet address is auto-detected from `~/.config/clawearn/wallet.json`
+2. API credentials are derived from your wallet signature
+3. Order is constructed, signed, and submitted to Polymarket CLOB
+4. Response includes Order ID and status
+
+**Order Requirements:**
+- `--token-id`: The numeric token ID (from `market info` output)
+- `--price`: Price per share (0.00 to 1.00, usually 0.001 minimum)
+- `--size`: Number of shares to buy/sell
+
+**Creating Orders Workflow:**
+
+```bash
+# 1. Search for a market
+clawearn polymarket market search --query "bitcoin"
+
+# 2. Get market details (shows token IDs)
+clawearn polymarket market info --market-id 194107
+
+# 3. Check current price
+clawearn polymarket price get --token-id NUMERIC_TOKEN_ID --side buy
+
+# 4. Place order (uses your stored wallet automatically)
+clawearn polymarket order buy \
+  --token-id NUMERIC_TOKEN_ID \
+  --price 0.40 \
+  --size 1
+
+# 5. Verify it was placed
+clawearn polymarket order list-open
+```
+
+**Troubleshooting Order Placement:**
+
+- ❌ **"No wallet found"** → Run `clawearn wallet create` first
+- ❌ **"Could not derive API credentials"** → Wallet not registered on Polymarket.com
+- ❌ **"Cloudflare protection detected"** → IP is being rate-limited
+  - Solutions: Wait, try different network, or use web interface at polymarket.com
+- ❌ **"Order failed"** → Check balance, price, and token ID are correct
+- ✅ **"Order placed successfully"** → Order was accepted, check list-open to confirm
 
 ---
 
@@ -230,7 +272,59 @@ All requests are handled via the internal client — you just use CLI commands.
 
 ## Error Handling
 
-Common errors and solutions:
+### Order Placement Errors
+
+**Error: "No wallet found!"**
+```
+Solution: Create a wallet first
+$ clawearn wallet create
+```
+
+**Error: "Could not derive API credentials"**
+```
+Your wallet isn't registered on Polymarket yet.
+Solution:
+1. Visit https://polymarket.com
+2. Connect your wallet address (0x...)
+3. Complete registration
+4. Try placing order again
+```
+
+**Error: "Cloudflare protection detected" (403 Forbidden)**
+```
+Your IP address is being rate-limited by Polymarket's security.
+Solutions (in order):
+1. Wait 30 seconds and retry
+2. Try from a different network
+3. Use a VPN to change your IP
+4. Use the web interface: https://polymarket.com
+```
+
+**Error: "Insufficient balance"**
+```
+Your wallet doesn't have enough USDC on Polygon.
+Solution:
+1. Check balance: clawearn polymarket balance check
+2. If low, transfer USDC to Polygon
+3. Or deposit via Arbitrum: clawearn polymarket deposit --amount 100
+```
+
+**Error: "Invalid token ID"**
+```
+The token ID you provided doesn't exist or market expired.
+Solution:
+1. Get fresh market info: clawearn polymarket market info --market-id <id>
+2. Copy the exact token ID from the output
+3. Try order again
+```
+
+**Error: "Order failed (negRisk)"**
+```
+Multi-outcome events require special negRisk handling.
+Current workaround: Use polymarket.com web interface for these markets
+```
+
+### Common Errors
 
 ```
 Error: Geographic restrictions apply
@@ -475,33 +569,110 @@ clawearn polymarket order list-open
 
 ### Workflow: Find and trade a market
 
+**Complete step-by-step order placement:**
+
 ```bash
-# 1. Search for a market
+# 1. Search for a market by keyword
 clawearn polymarket market search --query "Biden approval rating"
 
-# 2. Get market details (find token ID)
-clawearn polymarket market info --market-id 0x...
+# 2. Get market details (this shows token IDs for each outcome)
+clawearn polymarket market info --market-id 194107
 
-# 3. Check current price
-clawearn polymarket price get --token-id 0x... --side buy
+# Output will show:
+#   Market 1: "Will Biden approval hit 50%?"
+#     YES Token ID: 1234567890...
+#     NO Token ID: 9876543210...
 
-# 4. Check order book depth
-clawearn polymarket price book --token-id 0x...
+# 3. Check current price for the YES outcome
+clawearn polymarket price get \
+  --token-id 1234567890... \
+  --side buy
+# Output: {"price": "0.42"}
 
-# 5. Place an order (start small!)
+# 4. Optional: Check order book depth to see liquidity
+clawearn polymarket price book --token-id 1234567890...
+
+# 5. Place a BUY order (start small!)
 clawearn polymarket order buy \
-  --token-id 0x... \
-  --price 0.45 \
+  --token-id 1234567890... \
+  --price 0.42 \
   --size 20
+# Output: ✓ Order placed successfully! Order ID: xyz123
 
 # 6. Monitor your position
 clawearn polymarket order list-open
 
-# 7. Exit if needed
+# 7. Exit if needed (sell to realize P&L)
 clawearn polymarket order sell \
-  --token-id 0x... \
+  --token-id 1234567890... \
   --price 0.55 \
   --size 20
+```
+
+**Real Example: Bitcoin Market**
+
+```bash
+# 1. Find bitcoin markets
+$ clawearn polymarket market search --query "bitcoin 150000"
+
+# Search results for "bitcoin 150000":
+# Events:
+# - Will Bitcoin reach $150,000 in February? (ID: 194107)
+
+# 2. Get all prediction markets in this event
+$ clawearn polymarket market info --market-id 194107
+
+# Output shows 23 different price targets:
+#   1. Will Bitcoin reach $150,000 in February?
+#      YES Token ID: 37297213992198847758335843642137412014662841314020423585709724457305615671955
+#      NO Token ID: 85285091029101061598102453878417748165438482105623263900746828987387745601127
+#
+#   2. Will Bitcoin reach $120,000 in February?
+#      YES Token ID: 101634930257850341602969673615351678146180846411766214423237977523476147979287
+#      NO Token ID: 54686656666443885986573295372690758310199066081424255164816980635327619857547
+
+# 3. Check current price of Bitcoin hitting $150k
+$ clawearn polymarket price get \
+    --token-id 37297213992198847758335843642137412014662841314020423585709724457305615671955 \
+    --side buy
+
+# Output: {"price": "0.003"}
+# This means market thinks ~0.3% chance of Bitcoin hitting $150k in Feb
+
+# 4. You think it's higher probability, so you BUY at 0.35
+$ clawearn polymarket order buy \
+    --token-id 37297213992198847758335843642137412014662841314020423585709724457305615671955 \
+    --price 0.35 \
+    --size 5
+    
+# Output:
+# ℹ Using default tick size 0.001 (will be validated by API)
+# Placing BUY order: 5 shares @ $0.35
+# Creating initial client...
+# Deriving API credentials...
+# ✓ API credentials obtained
+# Initializing authenticated client...
+# ✓ Order placed successfully!
+# Order ID: abc123xyz
+# Status: 0
+
+# 5. Verify your order was placed
+$ clawearn polymarket order list-open
+
+# Output:
+# Found 1 open orders:
+# [{
+#   "orderID": "abc123xyz",
+#   "tokenID": "37297213992...",
+#   "price": 0.35,
+#   "size": 5,
+#   "side": "BUY",
+#   "status": "OPEN"
+# }]
+
+# 6. If Bitcoin hits $150k, your 5 shares worth $5
+#    If it doesn't, you lose $1.75 (5 × 0.35)
+#    Risk/Reward: -$1.75 to +$3.25
 ```
 
 ### Workflow: Create wallet and start trading
@@ -589,9 +760,87 @@ If you hit rate limits, implement exponential backoff in your agent's logic.
 
 ---
 
+## Order Placement Deep Dive
+
+### Understanding Token IDs
+
+Each outcome in a market has a unique numeric token ID:
+
+```
+Market: "Will Bitcoin hit $50k in February?"
+├─ YES outcome → Token ID: 123456789...
+└─ NO outcome → Token ID: 987654321...
+```
+
+**Get token IDs:**
+```bash
+clawearn polymarket market info --market-id EVENT_ID
+```
+
+The output shows all markets in an event with their token IDs.
+
+### Price Mechanics
+
+- **Price range:** 0.00 to 1.00 (represents probability)
+- **Minimum trade:** Usually 0.001 increments
+- **Lot size:** 1 share = $0.01 to $1.00 depending on price
+
+**Example:**
+```
+Current price: 0.42
+You buy 10 shares: 10 × $0.42 = $4.20 spent
+If it resolves YES: 10 × $1.00 = $10.00 received
+Profit: $5.80 (138% return)
+
+If it resolves NO: $0.00
+Loss: $4.20
+```
+
+### Order Lifecycle
+
+```
+1. CREATE → Order constructed locally with your wallet
+2. SIGN → Order signed with your private key
+3. SUBMIT → Sent to Polymarket CLOB API
+4. ACCEPT → Placed in order book
+5. FILL → Matched with counterparty
+6. SETTLE → Funds transferred after market resolves
+```
+
+The CLI handles steps 1-5. Step 6 happens automatically.
+
+### Limiting Your Risk
+
+**Position Sizing:**
+- Start with small test trades (5-10% of capital)
+- Never risk more than you can afford to lose
+- Scale up only after successful trades
+
+**Price Limits:**
+```bash
+# Conservative: Buy at 0.30 (not 0.50 ask)
+clawearn polymarket order buy --token-id ... --price 0.30 --size 10
+
+# Moderate: Buy at market (0.50)
+clawearn polymarket order buy --token-id ... --price 0.50 --size 10
+
+# Aggressive: Buy immediately (0.60 ask)
+# Usually fills quickly but higher slippage
+```
+
+**Exit Strategy:**
+```bash
+# Take profits: Sell when doubling
+clawearn polymarket order sell --token-id ... --price 0.80 --size 5
+
+# Cut losses: Sell at 50% loss
+clawearn polymarket order sell --token-id ... --price 0.25 --size 10
+```
+
 ## Support
 
 For issues or questions:
 - GitHub: [Your repository URL]
 - Documentation: See SETUP.md and README.md
 - Polymarket Discord: https://discord.gg/polymarket
+- Order placement issues: Check the troubleshooting section above

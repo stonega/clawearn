@@ -7,11 +7,12 @@ const GAMMA_API = "https://gamma-api.polymarket.com";
 const DATA_API = "https://data-api.polymarket.com";
 const CHAIN_ID = 137; // Polygon mainnet
 const ARBITRUM_RPC = "https://arb1.arbitrum.io/rpc";
-const POLYGON_RPC = "https://polygon-rpc.com";
+const POLYGON_RPC = "https://polygon-rpc.com/";
 const ARB_USDC_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // Native USDC on Arbitrum
 const ARB_USDCE_ADDRESS = "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"; // Bridged USDC.e on Arbitrum
 const POLYGON_USDC_ADDRESS = "0x2791bca1f2de4661ed88a30c99a7a9449aa84174"; // USDC on Polygon
 const POLYGON_POL_ADDRESS = "0x0000000000000000000000000000000000001010"; // POL (native) on Polygon
+const CLOB_EXCHANGE_ADDRESS = "0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E"; // Polymarket CLOB Exchange on Polygon
 const USDC_DECIMALS = 6;
 
 /**
@@ -88,6 +89,95 @@ function requirePrivateKey(args: string[], command: string): string {
 		process.exit(1);
 	}
 	return key;
+}
+
+/**
+ * Approve USDC for CLOB contract if needed
+ */
+async function approveUSDCIfNeeded(
+	signer: Wallet,
+	requiredAmount: string,
+): Promise<void> {
+	try {
+		const provider = new ethers.providers.JsonRpcProvider(POLYGON_RPC);
+		const signerWithProvider = signer.connect(provider);
+
+		// ERC20 ABI for approval
+		const erc20ABI = [
+			"function allowance(address owner, address spender) view returns (uint256)",
+			"function approve(address spender, uint256 amount) returns (bool)",
+		];
+
+		const usdcContract = new ethers.Contract(
+			POLYGON_USDC_ADDRESS,
+			erc20ABI,
+			signerWithProvider,
+		);
+
+		// Check current allowance
+		const currentAllowance = (await usdcContract.allowance(
+			signer.address,
+			CLOB_EXCHANGE_ADDRESS,
+		)) as ethers.BigNumber;
+
+		const requiredAmountBN = ethers.BigNumber.from(requiredAmount);
+
+		if (currentAllowance.gte(requiredAmountBN)) {
+			// Already approved enough
+			return;
+		}
+
+		console.log("Approving USDC for trading...");
+		console.log(
+			`Current allowance: ${ethers.utils.formatUnits(currentAllowance, USDC_DECIMALS)} USDC`,
+		);
+		console.log(
+			`Required for this order: ${ethers.utils.formatUnits(requiredAmountBN, USDC_DECIMALS)} USDC`,
+		);
+
+		// Approve a large amount (max uint256) to avoid repeated approvals
+		const maxApproval = ethers.constants.MaxUint256;
+
+		// Get current gas prices and set much higher values for reliability
+		const feeData = await provider.getFeeData();
+		// Use current base fee + buffer to ensure transaction goes through
+		const currentBaseFee = feeData.lastBaseFeePerGas
+			? feeData.lastBaseFeePerGas.mul(2)
+			: ethers.utils.parseUnits("500", "gwei");
+		const maxFeePerGas = currentBaseFee.add(
+			ethers.utils.parseUnits("50", "gwei"),
+		);
+		const maxPriorityFeePerGas = ethers.utils.parseUnits("50", "gwei");
+
+		const approveTx = await usdcContract.approve(
+			CLOB_EXCHANGE_ADDRESS,
+			maxApproval,
+			{
+				maxFeePerGas,
+				maxPriorityFeePerGas,
+			},
+		);
+
+		console.log(`Approval transaction sent: ${approveTx.hash}`);
+		console.log("Waiting for confirmation...");
+
+		const receipt = await approveTx.wait();
+
+		if (receipt && receipt.status === 1) {
+			console.log(
+				`✓ USDC approved for trading on Polygon (unlimited amount)`,
+			);
+		} else {
+			console.error("❌ Approval transaction failed!");
+			process.exit(1);
+		}
+	} catch (error) {
+		console.error(
+			"Failed to approve USDC:",
+			error instanceof Error ? error.message : error,
+		);
+		process.exit(1);
+	}
 }
 
 async function handleAccount(args: string[]) {
@@ -649,6 +739,14 @@ async function handleOrder(args: string[]) {
 				`Placing ${subcommand.toUpperCase()} order: ${size} shares @ $${price}`,
 			);
 
+			// Step 0: Ensure USDC is approved for trading
+			// Calculate the amount needed (price * size * 10^6 for microunits)
+			const orderCost = ethers.BigNumber.from(
+				Math.ceil(price * size * 1000000),
+			);
+			console.log("Checking USDC approval for trading...");
+			await approveUSDCIfNeeded(signer, orderCost.toString());
+
 			// Step 1: Initialize client with signer
 			console.log("Creating initial client...");
 			const initialClient = new ClobClient(HOST, CHAIN_ID, signer);
@@ -684,28 +782,83 @@ async function handleOrder(args: string[]) {
 			const side = subcommand === "buy" ? module.Side.BUY : module.Side.SELL;
 
 			// Use createAndPostOrder as per Polymarket documentation
-			const response = await client.createAndPostOrder(
-				{
-					tokenID: tokenId,
-					price: price,
-					size: size,
-					side: side,
-				},
-				{
-					tickSize: tickSize,
-					negRisk: negRisk,
-				},
-				module.OrderType.GTC, // Good-Til-Cancelled
-			);
+			try {
+				const response = await client.createAndPostOrder(
+					{
+						tokenID: tokenId,
+						price: price,
+						size: size,
+						side: side,
+					},
+					{
+						tickSize: tickSize,
+						negRisk: negRisk,
+					},
+					module.OrderType.GTC, // Good-Til-Cancelled
+				);
 
-			console.log("✓ Order placed successfully!");
-			console.log(`Order ID: ${response.orderID}`);
-			console.log(`Status: ${response.status}`);
+				console.log("✓ Order placed successfully!");
+				console.log(`Order ID: ${response.orderID}`);
+				console.log(`Status: ${response.status}`);
+			} catch (orderError) {
+				// If createAndPostOrder fails, try with explicit market fetch
+				console.log("\nRetrying with direct market fetch...");
+				
+				try {
+					// Try to get market details with better error handling
+					const markets = await client.getMarkets({ token_id: tokenId });
+					
+					// biome-ignore lint/suspicious/noExplicitAny: API response
+					const market = (markets as any[])[0];
+					
+					if (!market || !market.minimum_tick_size) {
+						throw new Error("Could not determine tick size for token");
+					}
+					
+					tickSize = market.minimum_tick_size as "0.1" | "0.01" | "0.001" | "0.0001";
+					negRisk = market.neg_risk || false;
+					
+					console.log(`✓ Got market details: tick size = ${tickSize}, negRisk = ${negRisk}`);
+					
+					// Retry order creation with correct parameters
+					const response = await client.createAndPostOrder(
+						{
+							tokenID: tokenId,
+							price: price,
+							size: size,
+							side: side,
+						},
+						{
+							tickSize: tickSize,
+							negRisk: negRisk,
+						},
+						module.OrderType.GTC,
+					);
+					
+					console.log("✓ Order placed successfully!");
+					console.log(`Order ID: ${response.orderID}`);
+					console.log(`Status: ${response.status}`);
+				} catch (retryError) {
+					throw orderError; // Throw original error if retry fails
+				}
+			}
 		} catch (error) {
-			console.error(
-				"Failed to place order:",
-				error instanceof Error ? error.message : error,
-			);
+			const errorMsg = error instanceof Error ? error.message : String(error);
+			
+			// Check if it's a Cloudflare block
+			if (errorMsg.includes("403") || errorMsg.includes("Cloudflare")) {
+				console.error("Failed to place order: Cloudflare protection detected");
+				console.error("\nPolymarket uses Cloudflare protection. Possible solutions:");
+				console.error("  1. Wait a moment and try again");
+				console.error("  2. Check your IP is not rate-limited");
+				console.error("  3. Try accessing polymarket.com directly first");
+				console.error("  4. Use a different network/VPN");
+			} else {
+				console.error(
+					"Failed to place order:",
+					errorMsg,
+				);
+			}
 			process.exit(1);
 		}
 	} else if (subcommand === "list-open") {
