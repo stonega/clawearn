@@ -1076,19 +1076,6 @@ async function handleDeposit(args: string[]) {
  * Withdraws USDC.e to Arbitrum
  */
 async function handleWithdraw(args: string[]) {
-	const recipientAddr = getArg(args, "--recipient-address");
-
-	if (!recipientAddr) {
-		console.error(
-			"Usage: clawearn polymarket withdraw --recipient-address <address>",
-		);
-		console.error("\nExample: clawearn polymarket withdraw \\");
-		console.error(
-			'  --recipient-address "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"',
-		);
-		process.exit(1);
-	}
-
 	const sourceAddress = getStoredAddress() || getArg(args, "--address");
 	if (!sourceAddress) {
 		console.error("❌ No source address found!");
@@ -1099,6 +1086,9 @@ async function handleWithdraw(args: string[]) {
 		process.exit(1);
 	}
 
+	// Recipient defaults to source address
+	const recipientAddr = getArg(args, "--recipient-address") || sourceAddress;
+
 	try {
 		// Arbitrum chain ID: 42161, USDC.e address on Arbitrum
 		const toChainId = "42161";
@@ -1108,7 +1098,9 @@ async function handleWithdraw(args: string[]) {
 		console.log(`Source:      ${sourceAddress}`);
 		console.log(`Destination: Arbitrum (Chain ID: ${toChainId})`);
 		console.log(`Token:       USDC.e (${toTokenAddress})`);
-		console.log(`Recipient:   ${recipientAddr}`);
+		console.log(
+			`Recipient:   ${recipientAddr}${recipientAddr === sourceAddress ? " (same as source)" : ""}`,
+		);
 		console.log("");
 
 		const response = await fetch(
@@ -1484,9 +1476,8 @@ DEPOSIT COMMANDS:
        --usdce                      Use bridged USDC.e instead of native USDC
 
 WITHDRAW COMMANDS:
-     withdraw
-       --recipient-address <addr>   Recipient wallet address on Arbitrum
-       (Withdraws USDC.e to Arbitrum)
+     withdraw [--recipient-address <addr>]
+       --recipient-address <addr>   Recipient wallet address (defaults to your wallet)
 
 REFUEL COMMANDS:
     refuel estimate
@@ -1521,8 +1512,10 @@ OTHER EXAMPLES:
      # View your wallet address
      clawearn polymarket account
 
-     # Withdraw USDC.e to Arbitrum
-     clawearn polymarket withdraw \\
-       --recipient-address "0xYourArbitrumAddress"
+     # Withdraw USDC.e to Arbitrum (to your own wallet)
+     clawearn polymarket withdraw
+
+     # Withdraw USDC.e to Arbitrum (to another address)
+     clawearn polymarket withdraw --recipient-address "0xOtherAddress"
 	`);
 }

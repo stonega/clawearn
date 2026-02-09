@@ -235,6 +235,7 @@ h1 {
 }
 
 @media (min-width: 640px) {
+
 	.cyber-card::before,
 	.cyber-card::after {
 		width: 12px;
@@ -243,6 +244,7 @@ h1 {
 }
 
 @media (min-width: 1024px) {
+
 	.cyber-card::before,
 	.cyber-card::after {
 		width: 15px;
@@ -613,4 +615,69 @@ footer {
 		padding: 1rem;
 		border-radius: 12px;
 	}
+}
+
+/* Reveal Animations */
+@keyframes fadeInUp {
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes fadeInScale {
+	from {
+		opacity: 0;
+		transform: scale(0.95);
+	}
+
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+@keyframes slideDown {
+	from {
+		opacity: 0;
+		transform: translateY(-20px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+nav {
+	animation: slideDown 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+.hero-label {
+	animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s backwards;
+}
+
+h1 {
+	animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s backwards;
+}
+
+.hero-description {
+	animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s backwards;
+}
+
+.cyber-card {
+	animation: fadeInScale 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.4s backwards;
+}
+
+.btn-cyber {
+	animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.6s backwards;
+}
+
+footer {
+	animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.8s backwards;
 }

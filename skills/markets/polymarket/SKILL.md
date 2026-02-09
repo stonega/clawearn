@@ -1,14 +1,14 @@
 ---
 name: polymarket-trading
-version: 1.4.0
-description: Complete guide to placing orders on Polymarket with clawearn. Fully functional with automatic USDC approval, dynamic gas pricing, market discovery, price data, and automated order execution with comprehensive troubleshooting.
+version: 1.5.0
+description: Complete guide to placing orders on Polymarket with clawearn. Fully functional with automatic USDC approval, dynamic gas pricing, market discovery, price data, automated order execution, deposits, withdrawals, and comprehensive troubleshooting.
 homepage: https://www.polymarket.com
 documentation: https://docs.polymarket.com
 metadata: 
   category: trading
   platform: polymarket
   requires_auth: true
-  features: ["market-search", "price-feeds", "order-placement", "balance-checking", "portfolio-tracking", "gas-refuel"]
+  features: ["market-search", "price-feeds", "order-placement", "balance-checking", "portfolio-tracking", "gas-refuel", "deposits", "withdrawals"]
 ---
 
 # Polymarket Trading Skill 📈
@@ -22,6 +22,8 @@ Trade prediction markets directly from your OpenClaw bot using Clawearn.
 - 📊 Get real-time prices and order book data
 - 🎯 Place buy/sell orders automatically ✅ **NOW FULLY FUNCTIONAL**
 - 📋 Manage your open orders and positions
+- 💳 Deposit USDC from Arbitrum to Polymarket
+- 💸 Withdraw USDC.e to Arbitrum
 - ⛽ Refuel POL gas for Polygon chain
 - 🤖 Build autonomous trading strategies
 - 🔐 Automatic ERC20 USDC approval (one-time on first order)
@@ -109,6 +111,30 @@ The tool will automatically fetch your unique deposit address from Polymarket an
 
 **Options:**
 - `--usdce`: Use this flag if you are sending bridged USDC.e instead of native USDC.
+
+### 3.5. Withdrawals (to Arbitrum)
+
+**Withdraw USDC.e to your wallet on Arbitrum:**
+```bash
+clawearn polymarket withdraw
+```
+
+This creates a deposit address for withdrawing USDC.e from Polymarket back to Arbitrum. Funds are automatically bridged.
+
+**Withdraw to a different address:**
+```bash
+clawearn polymarket withdraw --recipient-address 0x...
+```
+
+**How it works:**
+1. Command creates a unique deposit address on the Polymarket bridge API
+2. You send USDC.e from your Polymarket wallet to this address
+3. Funds are automatically bridged and swapped to USDC.e on Arbitrum
+4. Funds arrive at your destination wallet
+
+**Options:**
+- `--recipient-address <addr>`: Destination wallet on Arbitrum (defaults to your clawearn wallet)
+- `--address <addr>`: Override the source Polymarket wallet address (defaults to stored wallet)
 
 ### 4. Gas Refuel (Polygon)
 
@@ -708,6 +734,28 @@ clawearn polymarket balance check
 
 # 4. Start with test trades (5-10% of capital)
 # See "How to Play" section above for step-by-step
+```
+
+### Workflow: Withdraw USDC.e to Arbitrum
+
+```bash
+# 1. Create withdrawal address (defaults to your wallet)
+clawearn polymarket withdraw
+
+# Output:
+# Creating withdrawal address for Arbitrum...
+# EVM Deposit Address:
+#   0x23566f8b2E82aDfCf01846E54899d110e97AC053
+
+# 2. From Polymarket UI or another service, send USDC.e to the address above
+
+# 3. Wait for bridge confirmation (~10-30 minutes)
+
+# 4. Check your Arbitrum wallet balance
+# USDC.e should arrive automatically
+
+# Optional: Withdraw to a different address
+clawearn polymarket withdraw --recipient-address 0x...
 ```
 
 ### Workflow: Refuel gas for Polygon wallet
