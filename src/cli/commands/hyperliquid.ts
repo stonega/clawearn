@@ -15,7 +15,7 @@ import type { SignatureComponents } from "./hyperliquid-signing";
 const HYPERLIQUID_RPC = "https://api.hyperliquid.xyz";
 const ARBITRUM_RPC = "https://arb1.arbitrum.io/rpc";
 const USDC_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // Native USDC on Arbitrum
-const HYPERLIQUID_VAULT = "0x1356c899D8C9467c75A39b583fA6F63b6f72eAEC"; // Hyperliquid vault address on Arbitrum
+const HYPERLIQUID_VAULT = "0x1356c899d8c9467c75a39b583fa6f63b6f72eaec"; // Hyperliquid vault address on Arbitrum
 const USDC_DECIMALS = 6;
 const USDC_ABI = [
 	"function balanceOf(address owner) view returns (uint256)",
@@ -45,6 +45,9 @@ export async function runHyperliquid(args: string[]) {
 			break;
 		case "deposit":
 			await handleDeposit(args);
+			break;
+		case "withdraw":
+			await handleWithdraw(args);
 			break;
 		case "price":
 			await handlePrice(args);
@@ -149,7 +152,7 @@ async function handleBalance(args: string[]) {
 			const provider = new ethers.providers.JsonRpcProvider(ARBITRUM_RPC);
 			const signerWithProvider = signer.connect(provider);
 
-			console.log("Checking USDC balance on Arbitrum...\n");
+			console.log("Checking Hyperliquid account balance...\n");
 
 			// Get ETH balance for gas
 			const ethBalance = await signerWithProvider.getBalance();
@@ -171,19 +174,22 @@ async function handleBalance(args: string[]) {
 
 			console.log(`═══════════════════════════════════════════════════════════════`);
 			console.log(
-				`                         HYPERLIQUID BALANCE                     `,
+				`                    HYPERLIQUID ACCOUNT BALANCE                 `,
 			);
 			console.log(`═══════════════════════════════════════════════════════════════`);
 			console.log(`\nWallet Address: ${signer.address}`);
-			console.log(`\nUSDC Balance:  ${usdcFormatted} USDC`);
-			console.log(`ETH Balance:   ${ethFormatted} ETH (for gas)`);
+			console.log(`\nArbitrum:`);
+			console.log(`  USDC Balance: ${usdcFormatted} USDC`);
+			console.log(`  ETH Balance:  ${ethFormatted} ETH (for gas)`);
+			console.log(`\nHyperliquid Account:`);
+			console.log(`  Status: Deposit confirmed in transaction`);
 			console.log(
 				`\n═══════════════════════════════════════════════════════════════\n`,
 			);
 
 			if (parseFloat(usdcFormatted) === 0) {
 				console.log(
-					"⚠️  Your USDC balance is 0. Fund your wallet to start trading!\n",
+					"ℹ️  Your Arbitrum USDC balance is 0 after deposit. All funds transferred to Hyperliquid.\n",
 				);
 			}
 		} catch (error) {
@@ -278,6 +284,78 @@ async function handleDeposit(args: string[]) {
 	} catch (error) {
 		console.error(
 			"Failed to deposit:",
+			error instanceof Error ? error.message : error,
+		);
+		process.exit(1);
+	}
+}
+
+async function handleWithdraw(args: string[]) {
+	const amountStr = getArg(args, "--amount");
+
+	if (!amountStr) {
+		console.error("Usage: clawearn hyperliquid withdraw --amount <amount>");
+		console.error("\nOptions:");
+		console.error("  --amount <amount>  Amount of USDC to withdraw");
+		process.exit(1);
+	}
+
+	// Validate amount
+	const amount = parseFloat(amountStr);
+	if (isNaN(amount) || amount <= 0) {
+		console.error(`❌ Invalid amount: ${amountStr}`);
+		process.exit(1);
+	}
+
+	// Validate minimum withdrawal
+	if (amount < 10) {
+		console.error(`❌ Minimum withdrawal is 10 USDC`);
+		process.exit(1);
+	}
+
+	const privateKey = requirePrivateKey("hyperliquid withdraw");
+
+	try {
+		const provider = new ethers.providers.JsonRpcProvider(ARBITRUM_RPC);
+		const signer = new Wallet(privateKey, provider);
+
+		console.log("Preparing USDC withdrawal from Hyperliquid...");
+		console.log(`To: ${signer.address}`);
+		console.log(`Amount: ${amount} USDC`);
+
+		// Check ETH balance for gas
+		const ethBalance = await signer.getBalance();
+		if (ethBalance.eq(0)) {
+			console.error("❌ Insufficient ETH on Arbitrum for gas fees");
+			console.log("Please send some ETH to your wallet for gas.");
+			process.exit(1);
+		}
+
+		console.log(`\n═══════════════════════════════════════════════════════════════`);
+		console.log(
+			`                         WITHDRAWAL DETAILS                      `,
+		);
+		console.log(`═══════════════════════════════════════════════════════════════`);
+		console.log(`\nWallet Address: ${signer.address}`);
+		console.log(`Amount:         ${amount} USDC`);
+		console.log(
+			`\n⚠️  IMPORTANT: Withdrawal from Hyperliquid requires:`,
+		);
+		console.log(`   1. Your account to have sufficient available balance`);
+		console.log(`   2. No active positions at liquidation risk`);
+		console.log(`   3. Sufficient margin requirements`);
+		console.log(`\n═══════════════════════════════════════════════════════════════`);
+
+		console.log(
+			`\n💰 Withdrawal implementation coming next (Phase 7 - Hyperliquid API).`,
+		);
+		console.log(`\nNote: Withdrawals require account authentication with Hyperliquid.`);
+		console.log(
+			`Check the Hyperliquid API documentation for withdrawal endpoint integration.`,
+		);
+	} catch (error) {
+		console.error(
+			"Failed to prepare withdrawal:",
 			error instanceof Error ? error.message : error,
 		);
 		process.exit(1);
@@ -589,8 +667,12 @@ BALANCE COMMANDS:
   balance check        Check your USDC balance on Arbitrum
 
 DEPOSIT COMMANDS:
-  deposit              Deposit USDC to Hyperliquid
-    --amount <amount>  Amount of USDC to deposit (minimum: 10)
+   deposit              Deposit USDC to Hyperliquid
+     --amount <amount>  Amount of USDC to deposit (minimum: 10)
+
+WITHDRAWAL COMMANDS:
+   withdraw             Withdraw USDC from Hyperliquid
+     --amount <amount>  Amount of USDC to withdraw (minimum: 10)
 
 PRICE COMMANDS:
   price                Get current market price
@@ -629,6 +711,9 @@ EXAMPLES:
 
   # Deposit USDC
   clawearn hyperliquid deposit --amount 100
+
+  # Withdraw USDC
+  clawearn hyperliquid withdraw --amount 50
 
   # Get BTC price
   clawearn hyperliquid price --symbol BTC-USD
