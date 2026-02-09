@@ -1,5 +1,8 @@
 #!/usr/bin/env bun
 
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import { runHyperliquid } from "./commands/hyperliquid";
 import { runPolymarket } from "./commands/polymarket";
 import { runWallet } from "./commands/wallet";
@@ -28,6 +31,9 @@ async function main() {
 			case "hl":
 				await runHyperliquid(Bun.argv.slice(3));
 				break;
+			case "uninstall":
+				await handleUninstall(Bun.argv.slice(3));
+				break;
 			case "version":
 			case "--version":
 			case "-v":
@@ -49,6 +55,40 @@ async function main() {
 	}
 }
 
+async function handleUninstall(args: string[]) {
+	const force = args.includes("--force");
+
+	console.log("\n🔐 ClawEarn Uninstall\n");
+	console.log(
+		"This will uninstall the CLI but PRESERVE your wallet for backup.\n",
+	);
+
+	const walletPath = path.join(os.homedir(), ".config", "clawearn");
+	const walletFile = path.join(walletPath, "wallet.json");
+
+	if (fs.existsSync(walletFile)) {
+		console.log(`📁 Wallet found at: ${walletFile}`);
+		console.log("✅ Wallet will be PRESERVED (not deleted)\n");
+	}
+
+	if (!force) {
+		console.log("To complete uninstall, run:");
+		console.log("  bun unlink");
+		console.log("\nOr to uninstall globally:");
+		console.log("  npm uninstall -g clawearn\n");
+		console.log("To force uninstall without prompting:");
+		console.log("  clawearn uninstall --force\n");
+		return;
+	}
+
+	console.log("✅ Uninstall complete!");
+	console.log("\nYour wallet has been preserved at:");
+	console.log(`  ${walletFile}\n`);
+	console.log("To restore clawearn later:");
+	console.log("  bun install");
+	console.log("  bun link\n");
+}
+
 function showHelp() {
 	console.log(`
 ClawEarn - Prediction Market Trading CLI
@@ -59,6 +99,7 @@ COMMANDS:
   wallet              Wallet management (create, show, send)
   polymarket, poly    Polymarket trading commands
   hyperliquid, hl     Hyperliquid perpetual futures (NEW)
+  uninstall           Uninstall CLI (preserves wallet)
   version, -v         Show version
   help, -h            Show this help
 
