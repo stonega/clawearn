@@ -640,25 +640,10 @@ async function handleOrder(args: string[]) {
 
 			// Attempt to fetch market details if possible (for tick size info)
 			// This is optional - the CLOB API will validate these on order submission
-			try {
-				console.log("Fetching market details for tick size...");
-				const publicClient = new ClobClient(HOST, CHAIN_ID);
-				
-				// Try to fetch with the numeric token ID as a condition ID (long shot)
-				// Most markets use 0.001 tick size anyway
-				const market = await publicClient.getMarket(tokenId);
-				if (market && !(market as any).error) {
-					const fetchedTickSize = (market as any).tickSize || (market as any).minimum_tick_size;
-					if (fetchedTickSize) {
-						tickSize = String(fetchedTickSize) as "0.1" | "0.01" | "0.001" | "0.0001";
-						console.log(`✓ Found market tick size: ${tickSize}`);
-					}
-					negRisk = (market as any).negRisk || false;
-				}
-			} catch (marketError) {
-				// Market fetch failed, but we can proceed with defaults
-				console.log("ℹ Using default tick size 0.001 (will be validated by API)");
-			}
+			// Note: tokenId is an outcome/token ID, not a market/condition ID
+			// We can't reliably fetch market details without the condition ID,
+			// so we skip this and use defaults that work with the API
+			console.log("ℹ Using default tick size 0.001 (will be validated by API)");
 
 			console.log(
 				`Placing ${subcommand.toUpperCase()} order: ${size} shares @ $${price}`,
