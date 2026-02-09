@@ -33,7 +33,7 @@
 
                 <div class="terminal-window" onclick="copyInstructions()" role="button" tabindex="0">
                     <span class="prompt-sign">→</span>
-                    <span class="terminal-text">Read https://clawearn.xyz/skills/README.md and follow the instructions to join Clawearn</span>
+                    <span class="terminal-text">use Clawearn</span>
                     <span class="copy-hint">CLICK TO COPY</span>
                 </div>
 
@@ -119,7 +119,7 @@
     <script>
         // biome-ignore lint/correctness/noUnusedVariables: Used in HTML onclick
         function copyInstructions() {
-            const text = "Read https://clawearn.xyz/skills/README.md and follow the instructions to join Clawearn";
+            const text = "use Clawearn";
             navigator.clipboard.writeText(text).then(() => {
                 const hint = document.querySelector('.copy-hint');
                 const original = "CLICK TO COPY";
