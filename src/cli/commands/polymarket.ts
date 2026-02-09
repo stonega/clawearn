@@ -1073,21 +1073,16 @@ async function handleDeposit(args: string[]) {
 
 /**
  * Handle withdraw command to create withdrawal addresses
+ * Withdraws USDC.e to Arbitrum
  */
 async function handleWithdraw(args: string[]) {
-	const toChainId = getArg(args, "--to-chain-id");
-	const toTokenAddress = getArg(args, "--to-token-address");
 	const recipientAddr = getArg(args, "--recipient-address");
 
-	if (!toChainId || !toTokenAddress || !recipientAddr) {
+	if (!recipientAddr) {
 		console.error(
-			"Usage: clawearn polymarket withdraw --to-chain-id <id> --to-token-address <address> --recipient-address <address>",
+			"Usage: clawearn polymarket withdraw --recipient-address <address>",
 		);
 		console.error("\nExample: clawearn polymarket withdraw \\");
-		console.error('  --to-chain-id "1" \\');
-		console.error(
-			'  --to-token-address "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" \\',
-		);
 		console.error(
 			'  --recipient-address "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"',
 		);
@@ -1105,10 +1100,14 @@ async function handleWithdraw(args: string[]) {
 	}
 
 	try {
-		console.log("Creating withdrawal addresses...");
+		// Arbitrum chain ID: 42161, USDC.e address on Arbitrum
+		const toChainId = "42161";
+		const toTokenAddress = ARB_USDCE_ADDRESS;
+
+		console.log("Creating withdrawal address for Arbitrum...");
 		console.log(`Source:      ${sourceAddress}`);
-		console.log(`To Chain ID: ${toChainId}`);
-		console.log(`To Token:    ${toTokenAddress}`);
+		console.log(`Destination: Arbitrum (Chain ID: ${toChainId})`);
+		console.log(`Token:       USDC.e (${toTokenAddress})`);
 		console.log(`Recipient:   ${recipientAddr}`);
 		console.log("");
 
@@ -1139,29 +1138,23 @@ async function handleWithdraw(args: string[]) {
 		// biome-ignore lint/suspicious/noExplicitAny: Bridge API response
 		const result: any = await response.json();
 
-		console.log("✅ Withdrawal addresses created successfully!\n");
-		console.log("Deposit Addresses:");
-		console.log(`  EVM:  ${result.address.evm}`);
-		if (result.address.svm) {
-			console.log(`  SVM:  ${result.address.svm}`);
-		}
-		if (result.address.btc) {
-			console.log(`  BTC:  ${result.address.btc}`);
-		}
+		console.log("✅ Withdrawal address created successfully!\n");
+		console.log("EVM Deposit Address:");
+		console.log(`  ${result.address.evm}`);
 
 		console.log("\n⚠️  Instructions:");
 		console.log(
-			"1. Send USDC.e from your Polymarket wallet to the appropriate address above",
+			"1. Send USDC.e from your Polymarket wallet to the address above",
 		);
-		console.log("2. Funds will be automatically bridged and swapped");
-		console.log(`3. They will arrive at: ${recipientAddr}`);
+		console.log("2. Funds will be automatically bridged to Arbitrum");
+		console.log(`3. USDC.e will arrive at: ${recipientAddr}`);
 
 		if (result.note) {
 			console.log(`\nℹ️  ${result.note}`);
 		}
 	} catch (error) {
 		console.error(
-			"Failed to create withdrawal addresses:",
+			"Failed to create withdrawal address:",
 			error instanceof Error ? error.message : error,
 		);
 		process.exit(1);
@@ -1492,9 +1485,8 @@ DEPOSIT COMMANDS:
 
 WITHDRAW COMMANDS:
      withdraw
-       --to-chain-id <id>           Destination chain ID (e.g., "1" for Ethereum)
-       --to-token-address <address> Destination token contract address
-       --recipient-address <addr>   Destination wallet address
+       --recipient-address <addr>   Recipient wallet address on Arbitrum
+       (Withdraws USDC.e to Arbitrum)
 
 REFUEL COMMANDS:
     refuel estimate
@@ -1529,10 +1521,8 @@ OTHER EXAMPLES:
      # View your wallet address
      clawearn polymarket account
 
-     # Withdraw to Ethereum (using USDC)
+     # Withdraw USDC.e to Arbitrum
      clawearn polymarket withdraw \\
-       --to-chain-id "1" \\
-       --to-token-address "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" \\
-       --recipient-address "0xYourEthereumAddress"
+       --recipient-address "0xYourArbitrumAddress"
 	`);
 }
