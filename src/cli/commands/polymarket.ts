@@ -46,6 +46,9 @@ export async function runPolymarket(args: string[]) {
 		case "deposit":
 			await handleDeposit(args);
 			break;
+		case "withdraw":
+			await handleWithdraw(args);
+			break;
 		case "refuel":
 			await handleRefuel(args.slice(1));
 			break;
@@ -1068,6 +1071,103 @@ async function handleDeposit(args: string[]) {
 	}
 }
 
+/**
+ * Handle withdraw command to create withdrawal addresses
+ */
+async function handleWithdraw(args: string[]) {
+	const toChainId = getArg(args, "--to-chain-id");
+	const toTokenAddress = getArg(args, "--to-token-address");
+	const recipientAddr = getArg(args, "--recipient-address");
+
+	if (!toChainId || !toTokenAddress || !recipientAddr) {
+		console.error(
+			"Usage: clawearn polymarket withdraw --to-chain-id <id> --to-token-address <address> --recipient-address <address>",
+		);
+		console.error("\nExample: clawearn polymarket withdraw \\");
+		console.error('  --to-chain-id "1" \\');
+		console.error(
+			'  --to-token-address "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" \\',
+		);
+		console.error(
+			'  --recipient-address "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"',
+		);
+		process.exit(1);
+	}
+
+	const sourceAddress = getStoredAddress() || getArg(args, "--address");
+	if (!sourceAddress) {
+		console.error("❌ No source address found!");
+		console.log("Either create a wallet with: clawearn wallet create");
+		console.log(
+			"Or provide: --address <your-polymarket-wallet-address>",
+		);
+		process.exit(1);
+	}
+
+	try {
+		console.log("Creating withdrawal addresses...");
+		console.log(`Source:      ${sourceAddress}`);
+		console.log(`To Chain ID: ${toChainId}`);
+		console.log(`To Token:    ${toTokenAddress}`);
+		console.log(`Recipient:   ${recipientAddr}`);
+		console.log("");
+
+		const response = await fetch(
+			"https://bridge.polymarket.com/withdraw",
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					address: sourceAddress,
+					toChainId,
+					toTokenAddress,
+					recipientAddr,
+				}),
+			},
+		);
+
+		if (!response.ok) {
+			const error = await response.json();
+			throw new Error(
+				error.error ||
+					`API error: ${response.status} ${response.statusText}`,
+			);
+		}
+
+		// biome-ignore lint/suspicious/noExplicitAny: Bridge API response
+		const result: any = await response.json();
+
+		console.log("✅ Withdrawal addresses created successfully!\n");
+		console.log("Deposit Addresses:");
+		console.log(`  EVM:  ${result.address.evm}`);
+		if (result.address.svm) {
+			console.log(`  SVM:  ${result.address.svm}`);
+		}
+		if (result.address.btc) {
+			console.log(`  BTC:  ${result.address.btc}`);
+		}
+
+		console.log("\n⚠️  Instructions:");
+		console.log(
+			"1. Send USDC.e from your Polymarket wallet to the appropriate address above",
+		);
+		console.log("2. Funds will be automatically bridged and swapped");
+		console.log(`3. They will arrive at: ${recipientAddr}`);
+
+		if (result.note) {
+			console.log(`\nℹ️  ${result.note}`);
+		}
+	} catch (error) {
+		console.error(
+			"Failed to create withdrawal addresses:",
+			error instanceof Error ? error.message : error,
+		);
+		process.exit(1);
+	}
+}
+
 async function handleRefuel(args: string[]) {
 	const subcommand = args[0];
 
@@ -1386,9 +1486,15 @@ NOTE: All commands use your stored wallet automatically.
       Create one with: clawearn wallet create
 
 DEPOSIT COMMANDS:
-    deposit
-      --amount <amount>            Amount of USDC to deposit
-      --usdce                      Use bridged USDC.e instead of native USDC
+     deposit
+       --amount <amount>            Amount of USDC to deposit
+       --usdce                      Use bridged USDC.e instead of native USDC
+
+WITHDRAW COMMANDS:
+     withdraw
+       --to-chain-id <id>           Destination chain ID (e.g., "1" for Ethereum)
+       --to-token-address <address> Destination token contract address
+       --recipient-address <addr>   Destination wallet address
 
 REFUEL COMMANDS:
     refuel estimate
@@ -1417,10 +1523,16 @@ WORKFLOW: Search → Get ID → Place Order
       --size 10
 
 OTHER EXAMPLES:
-    # Check open orders
-    clawearn poly order list-open
+     # Check open orders
+     clawearn poly order list-open
 
-    # View your wallet address
-    clawearn polymarket account
-`);
+     # View your wallet address
+     clawearn polymarket account
+
+     # Withdraw to Ethereum (using USDC)
+     clawearn polymarket withdraw \\
+       --to-chain-id "1" \\
+       --to-token-address "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" \\
+       --recipient-address "0xYourEthereumAddress"
+	`);
 }
