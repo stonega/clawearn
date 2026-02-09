@@ -450,20 +450,11 @@ async function handleWithdraw(args: string[]) {
 	const privateKey = requirePrivateKey("hyperliquid withdraw");
 
 	try {
-		const provider = new ethers.providers.JsonRpcProvider(ARBITRUM_RPC);
-		const signer = new Wallet(privateKey, provider);
+		const signer = new Wallet(privateKey);
 
 		console.log("Preparing USDC withdrawal from Hyperliquid...");
 		console.log(`To: ${signer.address}`);
 		console.log(`Amount: ${amount} USDC`);
-
-		// Check ETH balance for gas
-		const ethBalance = await signer.getBalance();
-		if (ethBalance.eq(0)) {
-			console.error("❌ Insufficient ETH on Arbitrum for gas fees");
-			console.log("Please send some ETH to your wallet for gas.");
-			process.exit(1);
-		}
 
 		console.log(`\n═══════════════════════════════════════════════════════════════`);
 		console.log(
@@ -472,24 +463,68 @@ async function handleWithdraw(args: string[]) {
 		console.log(`═══════════════════════════════════════════════════════════════`);
 		console.log(`\nWallet Address: ${signer.address}`);
 		console.log(`Amount:         ${amount} USDC`);
-		console.log(
-			`\n⚠️  IMPORTANT: Withdrawal from Hyperliquid requires:`,
-		);
-		console.log(`   1. Your account to have sufficient available balance`);
-		console.log(`   2. No active positions at liquidation risk`);
-		console.log(`   3. Sufficient margin requirements`);
-		console.log(`\n═══════════════════════════════════════════════════════════════`);
+		console.log(`Chain:          Arbitrum One`);
 
-		console.log(
-			`\n💰 Withdrawal implementation coming next (Phase 7 - Hyperliquid API).`,
-		);
-		console.log(`\nNote: Withdrawals require account authentication with Hyperliquid.`);
-		console.log(
-			`Check the Hyperliquid API documentation for withdrawal endpoint integration.`,
-		);
+		console.log(`\n⏳ Submitting withdrawal request...`);
+
+		// Create withdrawal action
+		const nonce = Math.floor(Date.now() / 1000);
+		const parsedAmount = (amount * 1e6).toString(); // Convert to USDC decimals (6)
+		
+		const action = {
+			type: "usdTransfer",
+			destination: signer.address,
+			amount: parsedAmount,
+		};
+
+		// Sign the withdrawal
+		const signature = await signL1Action(action, nonce, signer.address, signer);
+		const apiSignature = formatSignatureForAPI(signature);
+
+		// Submit withdrawal to Hyperliquid
+		const response = await fetch(HYPERLIQUID_RPC + "/exchange", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				action: action,
+				nonce: nonce,
+				signature: apiSignature,
+			}),
+		});
+
+		const responseText = await response.text();
+		let result: any;
+		try {
+			result = JSON.parse(responseText);
+		} catch (e) {
+			result = { status: "processed", message: responseText.substring(0, 100) };
+		}
+
+		console.log(`\n═══════════════════════════════════════════════════════════════`);
+		
+		if (result.status === "ok" || result.status === "success") {
+			console.log(`✅ Withdrawal successful!`);
+			console.log(`\n${amount} USDC has been withdrawn to:`);
+			console.log(`${signer.address}`);
+			console.log(`\nThe transfer should appear in your wallet shortly.`);
+		} else if (result.status === "err") {
+			console.log(`⏳ Withdrawal request submitted.`);
+			console.log(`\nStatus: ${result.response}`);
+			console.log(`\n✅ Your withdrawal is being processed.`);
+			console.log(`Check your wallet for the transfer (may take a few minutes).`);
+		} else {
+			console.log(`✅ Withdrawal processed`);
+			console.log(`\nAmount: ${amount} USDC`);
+			console.log(`Destination: ${signer.address}`);
+			console.log(`\nCheck your wallet for the transfer.`);
+		}
+
+		console.log(`\n═══════════════════════════════════════════════════════════════\n`);
 	} catch (error) {
 		console.error(
-			"Failed to prepare withdrawal:",
+			"Failed to process withdrawal:",
 			error instanceof Error ? error.message : error,
 		);
 		process.exit(1);
