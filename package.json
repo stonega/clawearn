@@ -8,10 +8,6 @@
 		"clawearn": "./src/cli/index.ts"
 	},
 	"scripts": {
-		"dev:worker": "wrangler dev",
-		"dev": "bun server.ts",
-		"deploy:worker": "wrangler deploy",
-		"deploy:worker:prod": "wrangler deploy --env production",
 		"lint": "biome lint .",
 		"format": "biome format --write .",
 		"check": "biome check --write ."
@@ -19,15 +15,12 @@
 	"dependencies": {
 		"@polymarket/clob-client": "^5.2.1",
 		"ethers": "^5.8.0",
-		"msgpackr": "^1.10.2",
 		"tslib": "^2.8.1"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.13",
-		"@cloudflare/workers-types": "latest",
 		"@types/bun": "latest",
-		"@types/node": "latest",
-		"wrangler": "latest"
+		"@types/node": "latest"
 	},
 	"peerDependencies": {
 		"typescript": "^5"

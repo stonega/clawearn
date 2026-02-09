@@ -86,7 +86,7 @@ async function handleUninstall(args: string[]) {
 
 function showHelp() {
 	console.log(`
-ClawEarn - Prediction Market Trading CLI
+ClawEarn - Trading CLI
 
 Usage: clawearn <command> [subcommand] [options]
 
