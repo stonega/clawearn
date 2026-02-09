@@ -1,7 +1,7 @@
 ---
 name: polymarket-trading
-version: 1.3.0
-description: Complete guide to placing orders on Polymarket with clawearn. Market discovery, price data, and automated order execution with comprehensive troubleshooting.
+version: 1.4.0
+description: Complete guide to placing orders on Polymarket with clawearn. Fully functional with automatic USDC approval, dynamic gas pricing, market discovery, price data, and automated order execution with comprehensive troubleshooting.
 homepage: https://www.polymarket.com
 documentation: https://docs.polymarket.com
 metadata: 
@@ -20,10 +20,11 @@ Trade prediction markets directly from your OpenClaw bot using Clawearn.
 - 🔍 Search and discover prediction markets
 - 💰 Check your USDC balance and positions
 - 📊 Get real-time prices and order book data
-- 🎯 Place buy/sell orders automatically
-- 📋 Manage your open orders
+- 🎯 Place buy/sell orders automatically ✅ **NOW FULLY FUNCTIONAL**
+- 📋 Manage your open orders and positions
 - ⛽ Refuel POL gas for Polygon chain
 - 🤖 Build autonomous trading strategies
+- 🔐 Automatic ERC20 USDC approval (one-time on first order)
 
 ## Skill Files
 
@@ -233,14 +234,32 @@ clawearn polymarket order buy \
 clawearn polymarket order list-open
 ```
 
+**Automatic USDC Approval:**
+
+When you place your first order, clawearn automatically:
+1. Checks if USDC is approved for the CLOB contract
+2. If not approved, sends an approval transaction to grant unlimited spending
+3. Waits for the approval to be confirmed
+4. Then proceeds with order placement
+
+This approval is a one-time transaction. Subsequent orders won't need approval since the contract has unlimited permission.
+
+**Gas Fees for Approval:**
+- Approval transaction costs: ~0.006 USDC (typically $0.01-$0.02)
+- The system automatically calculates and pays appropriate gas fees for Polygon
+- Uses dynamic gas pricing to ensure transaction goes through even during network congestion
+
 **Troubleshooting Order Placement:**
 
 - ❌ **"No wallet found"** → Run `clawearn wallet create` first
 - ❌ **"Could not derive API credentials"** → Wallet not registered on Polymarket.com
 - ❌ **"Cloudflare protection detected"** → IP is being rate-limited
   - Solutions: Wait, try different network, or use web interface at polymarket.com
+- ❌ **"Failed to approve USDC"** → Insufficient gas (POL) on Polygon for approval transaction
+  - Solutions: Ensure wallet has POL for gas fees, or use web interface
 - ❌ **"Order failed"** → Check balance, price, and token ID are correct
 - ✅ **"Order placed successfully"** → Order was accepted, check list-open to confirm
+- ✅ **"Approving USDC for trading..."** → First order approval in progress (normal behavior)
 
 ---
 
