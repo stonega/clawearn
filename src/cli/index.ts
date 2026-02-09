@@ -3,11 +3,10 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { runHyperliquid } from "./commands/hyperliquid";
 import { runPolymarket } from "./commands/polymarket";
 import { runWallet } from "./commands/wallet";
 
-const VERSION = "0.1.0";
+const VERSION = "0.3.0";
 
 // Command routing
 const command = Bun.argv[2];
@@ -26,10 +25,6 @@ async function main() {
 			case "polymarket":
 			case "poly":
 				await runPolymarket(Bun.argv.slice(3));
-				break;
-			case "hyperliquid":
-			case "hl":
-				await runHyperliquid(Bun.argv.slice(3));
 				break;
 			case "uninstall":
 				await handleUninstall(Bun.argv.slice(3));
@@ -96,12 +91,11 @@ ClawEarn - Prediction Market Trading CLI
 Usage: clawearn <command> [subcommand] [options]
 
 COMMANDS:
-  wallet              Wallet management (create, show, send)
-  polymarket, poly    Polymarket trading commands
-  hyperliquid, hl     Hyperliquid perpetual futures (NEW)
-  uninstall           Uninstall CLI (preserves wallet)
-  version, -v         Show version
-  help, -h            Show this help
+   wallet              Wallet management (create, show, send)
+   polymarket, poly    Polymarket trading commands
+   uninstall           Uninstall CLI (preserves wallet)
+   version, -v         Show version
+   help, -h            Show this help
 
 GETTING STARTED:
   # 1. Create a wallet on this device
