@@ -114,25 +114,33 @@ The tool will automatically fetch your unique deposit address from Polymarket an
 
 ### 3.5. Withdrawals (to Arbitrum)
 
-**Withdraw USDC.e to your wallet on Arbitrum:**
+**Withdraw USDC.e directly (automatic):**
+```bash
+clawearn polymarket withdraw --amount 0.1
+```
+
+This automatically creates a deposit address and sends your USDC.e to it. No manual transfer needed!
+
+**Withdraw to a different address:**
+```bash
+clawearn polymarket withdraw --amount 0.1 --recipient-address 0x...
+```
+
+**Manual withdrawal (just get the address):**
 ```bash
 clawearn polymarket withdraw
 ```
 
-This creates a deposit address for withdrawing USDC.e from Polymarket back to Arbitrum. Funds are automatically bridged.
+Creates a deposit address for manual transfer if you prefer to send funds yourself.
 
-**Withdraw to a different address:**
-```bash
-clawearn polymarket withdraw --recipient-address 0x...
-```
-
-**How it works:**
+**How it works (with --amount):**
 1. Command creates a unique deposit address on the Polymarket bridge API
-2. You send USDC.e from your Polymarket wallet to this address
+2. Automatically sends your USDC.e from Polygon wallet to the deposit address
 3. Funds are automatically bridged and swapped to USDC.e on Arbitrum
-4. Funds arrive at your destination wallet
+4. Funds arrive at your destination wallet within 10-30 minutes
 
 **Options:**
+- `--amount <amount>`: Amount of USDC.e to withdraw (optional, triggers automatic send)
 - `--recipient-address <addr>`: Destination wallet on Arbitrum (defaults to your clawearn wallet)
 - `--address <addr>`: Override the source Polymarket wallet address (defaults to stored wallet)
 
@@ -738,24 +746,34 @@ clawearn polymarket balance check
 
 ### Workflow: Withdraw USDC.e to Arbitrum
 
+**Quick withdrawal (automatic):**
 ```bash
-# 1. Create withdrawal address (defaults to your wallet)
-clawearn polymarket withdraw
+# 1. Withdraw 0.1 USDC.e automatically
+clawearn polymarket withdraw --amount 0.1
 
 # Output:
 # Creating withdrawal address for Arbitrum...
-# EVM Deposit Address:
-#   0x23566f8b2E82aDfCf01846E54899d110e97AC053
+# ✅ Withdrawal address created successfully!
+# 📤 Sending USDC to withdrawal address...
+# ✅ Transfer successful!
+# ⏳ Funds will be bridged to Arbitrum within 10-30 minutes
 
-# 2. From Polymarket UI or another service, send USDC.e to the address above
+# 2. Wait for bridge confirmation (~10-30 minutes)
+
+# 3. Check your Arbitrum wallet balance
+# USDC.e should arrive automatically
+```
+
+**Manual withdrawal (if you prefer):**
+```bash
+# 1. Create withdrawal address
+clawearn polymarket withdraw
+
+# 2. From Polymarket UI, send USDC.e to the generated address
 
 # 3. Wait for bridge confirmation (~10-30 minutes)
 
-# 4. Check your Arbitrum wallet balance
-# USDC.e should arrive automatically
-
-# Optional: Withdraw to a different address
-clawearn polymarket withdraw --recipient-address 0x...
+# 4. Check your Arbitrum wallet
 ```
 
 ### Workflow: Refuel gas for Polygon wallet

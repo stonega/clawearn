@@ -1072,10 +1072,11 @@ async function handleDeposit(args: string[]) {
 }
 
 /**
- * Handle withdraw command to create withdrawal addresses
- * Withdraws USDC.e to Arbitrum
+ * Handle withdraw command to create withdrawal addresses and send tokens
+ * Withdraws USDC.e from Polygon to Arbitrum
  */
 async function handleWithdraw(args: string[]) {
+	const amountStr = getArg(args, "--amount");
 	const sourceAddress = getStoredAddress() || getArg(args, "--address");
 	if (!sourceAddress) {
 		console.error("❌ No source address found!");
@@ -1129,24 +1130,99 @@ async function handleWithdraw(args: string[]) {
 
 		// biome-ignore lint/suspicious/noExplicitAny: Bridge API response
 		const result: any = await response.json();
+		const depositAddress = result.address.evm;
 
 		console.log("✅ Withdrawal address created successfully!\n");
 		console.log("EVM Deposit Address:");
-		console.log(`  ${result.address.evm}`);
+		console.log(`  ${depositAddress}`);
 
-		console.log("\n⚠️  Instructions:");
-		console.log(
-			"1. Send USDC.e from your Polymarket wallet to the address above",
-		);
-		console.log("2. Funds will be automatically bridged to Arbitrum");
-		console.log(`3. USDC.e will arrive at: ${recipientAddr}`);
+		// If amount is provided, send the token
+		if (amountStr) {
+			await sendUSDCeToDepositAddress(
+				sourceAddress,
+				depositAddress,
+				amountStr,
+			);
+		} else {
+			console.log("\n⚠️  Instructions:");
+			console.log(
+				"1. Send USDC.e from your Polymarket wallet to the address above",
+			);
+			console.log("2. Funds will be automatically bridged to Arbitrum");
+			console.log(`3. USDC.e will arrive at: ${recipientAddr}`);
 
-		if (result.note) {
-			console.log(`\nℹ️  ${result.note}`);
+			if (result.note) {
+				console.log(`\nℹ️  ${result.note}`);
+			}
 		}
 	} catch (error) {
 		console.error(
 			"Failed to create withdrawal address:",
+			error instanceof Error ? error.message : error,
+		);
+		process.exit(1);
+	}
+}
+
+/**
+ * Send USDC.e from Polygon to the withdrawal deposit address
+ */
+async function sendUSDCeToDepositAddress(
+	sourceAddress: string,
+	depositAddress: string,
+	amountStr: string,
+): Promise<void> {
+	try {
+		const privateKey = getStoredPrivateKey();
+		if (!privateKey) {
+			console.error("❌ No private key found!");
+			console.log("Create a wallet with: clawearn wallet create");
+			process.exit(1);
+		}
+
+		const provider = new ethers.providers.JsonRpcProvider(POLYGON_RPC);
+		const wallet = new Wallet(privateKey, provider);
+
+		// Use USDC.e on Polygon (same address as Polymarket uses)
+		const usdceAddress = POLYGON_USDC_ADDRESS;
+		const tokenContract = new ethers.Contract(
+			usdceAddress,
+			ERC20_ABI,
+			wallet,
+		);
+
+		const decimals = await tokenContract.decimals();
+		const amount = ethers.utils.parseUnits(amountStr, decimals);
+
+		// Check balance
+		const balance = await tokenContract.balanceOf(wallet.address);
+		if (balance.lt(amount)) {
+			console.error(`❌ Insufficient USDC balance on Polygon`);
+			console.error(`   Required: ${amountStr}`);
+			console.error(
+				`   Available: ${ethers.utils.formatUnits(balance, decimals)}`,
+			);
+			process.exit(1);
+		}
+
+		console.log("\n📤 Sending USDC to withdrawal address...");
+		console.log(`From:   ${wallet.address}`);
+		console.log(`To:     ${depositAddress} (Bridge Deposit Address)`);
+		console.log(`Amount: ${amountStr} USDC.e`);
+		console.log("");
+
+		const tx = await tokenContract.transfer(depositAddress, amount);
+		console.log(`Transaction sent! Hash: ${tx.hash}`);
+		console.log("Waiting for confirmation...");
+
+		const receipt = await tx.wait();
+		console.log("");
+		console.log("✅ Transfer successful!");
+		console.log(`Block: ${receipt.blockNumber}`);
+		console.log("\n⏳ Funds will be bridged to Arbitrum within 10-30 minutes");
+	} catch (error) {
+		console.error(
+			"Failed to send withdrawal:",
 			error instanceof Error ? error.message : error,
 		);
 		process.exit(1);
@@ -1476,7 +1552,8 @@ DEPOSIT COMMANDS:
        --usdce                      Use bridged USDC.e instead of native USDC
 
 WITHDRAW COMMANDS:
-     withdraw [--recipient-address <addr>]
+     withdraw [--amount <amount>] [--recipient-address <addr>]
+       --amount <amount>            Amount of USDC.e to withdraw (optional)
        --recipient-address <addr>   Recipient wallet address (defaults to your wallet)
 
 REFUEL COMMANDS:
@@ -1512,10 +1589,13 @@ OTHER EXAMPLES:
      # View your wallet address
      clawearn polymarket account
 
-     # Withdraw USDC.e to Arbitrum (to your own wallet)
-     clawearn polymarket withdraw
+     # Withdraw 0.1 USDC.e to Arbitrum (to your own wallet)
+     clawearn polymarket withdraw --amount 0.1
 
-     # Withdraw USDC.e to Arbitrum (to another address)
-     clawearn polymarket withdraw --recipient-address "0xOtherAddress"
+     # Withdraw to another address
+     clawearn polymarket withdraw --amount 0.1 --recipient-address "0xOtherAddress"
+
+     # Just create withdrawal address (manual transfer)
+     clawearn polymarket withdraw
 	`);
 }
