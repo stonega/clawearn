@@ -374,22 +374,7 @@ h1 {
 	}
 }
 
-@media (hover: hover) {
-	.copy-hint {
-		opacity: 0;
-		position: absolute;
-		right: 1rem;
-		top: 50%;
-		transform: translateY(-50%);
-		margin-left: 0;
-		display: block;
-	}
 
-	.terminal-window:hover .copy-hint {
-		opacity: 1;
-		transform: translateY(-50%) scale(1.05);
-	}
-}
 
 .partners-section {
 	margin-top: 1.5rem;

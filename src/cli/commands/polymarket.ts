@@ -556,7 +556,7 @@ async function handleMarket(args: string[]) {
 							const mkt = markets[idx];
 							let title = mkt.title || mkt.question || mkt.outcome || "Unknown";
 							const conditionId = mkt.conditionId || mkt.condition_id || mkt.id || "N/A";
-							
+
 							// Parse clobTokenIds from Gamma API (it's a JSON string array)
 							// These are ERC1155 token IDs used for order placement
 							let tokenIds: string[] = [];
@@ -803,23 +803,14 @@ async function handleOrder(args: string[]) {
 			} catch (orderError) {
 				// If createAndPostOrder fails, try with explicit market fetch
 				console.log("\nRetrying with direct market fetch...");
-				
+
 				try {
-					// Try to get market details with better error handling
-					const markets = await client.getMarkets({ token_id: tokenId });
-					
-					// biome-ignore lint/suspicious/noExplicitAny: API response
-					const market = (markets as any[])[0];
-					
-					if (!market || !market.minimum_tick_size) {
-						throw new Error("Could not determine tick size for token");
-					}
-					
-					tickSize = market.minimum_tick_size as "0.1" | "0.01" | "0.001" | "0.0001";
-					negRisk = market.neg_risk || false;
-					
+					// Fetch tick size and neg risk directly using token ID
+					tickSize = await client.getTickSize(tokenId);
+					negRisk = await client.getNegRisk(tokenId);
+
 					console.log(`✓ Got market details: tick size = ${tickSize}, negRisk = ${negRisk}`);
-					
+
 					// Retry order creation with correct parameters
 					const response = await client.createAndPostOrder(
 						{
@@ -834,7 +825,7 @@ async function handleOrder(args: string[]) {
 						},
 						module.OrderType.GTC,
 					);
-					
+
 					console.log("✓ Order placed successfully!");
 					console.log(`Order ID: ${response.orderID}`);
 					console.log(`Status: ${response.status}`);
@@ -844,7 +835,7 @@ async function handleOrder(args: string[]) {
 			}
 		} catch (error) {
 			const errorMsg = error instanceof Error ? error.message : String(error);
-			
+
 			// Check if it's a Cloudflare block
 			if (errorMsg.includes("403") || errorMsg.includes("Cloudflare")) {
 				console.error("Failed to place order: Cloudflare protection detected");
