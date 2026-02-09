@@ -1211,7 +1211,25 @@ async function sendUSDCeToDepositAddress(
 		console.log(`Amount: ${amountStr} USDC.e`);
 		console.log("");
 
-		const tx = await tokenContract.transfer(depositAddress, amount);
+		// Get current gas prices for Polygon
+		const feeData = await provider.getFeeData();
+		const gasPrice = feeData.gasPrice;
+
+		// Estimate gas for the transfer
+		const gasEstimate = await tokenContract.estimateGas.transfer(
+			depositAddress,
+			amount,
+		);
+
+		// Add 20% buffer to gas estimate
+		const adjustedGas = gasEstimate.mul(120).div(100);
+
+		// For Polygon, use gasPrice instead of EIP-1559
+		const tx = await tokenContract.transfer(depositAddress, amount, {
+			gasPrice: gasPrice || ethers.utils.parseUnits("50", "gwei"),
+			gasLimit: adjustedGas,
+		});
+
 		console.log(`Transaction sent! Hash: ${tx.hash}`);
 		console.log("Waiting for confirmation...");
 
