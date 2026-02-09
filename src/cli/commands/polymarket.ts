@@ -190,8 +190,18 @@ async function handleAccount(args: string[]) {
 		// Show account info
 		const address = getStoredAddress();
 		if (address) {
-			console.log(`Wallet Address: ${address}`);
-			console.log("Use 'clawearn wallet show' for more details.");
+			console.log(`\n═══════════════════════════════════════════════════════════════`);
+			console.log(
+				`                     POLYMARKET ACCOUNT                      `,
+			);
+			console.log(`═══════════════════════════════════════════════════════════════`);
+			console.log(`\nWallet Address: ${address}`);
+			console.log(
+				`Profile:        https://polymarketscan.org/address/${address}`,
+			);
+			console.log(
+				`\n═══════════════════════════════════════════════════════════════\n`,
+			);
 		} else {
 			console.error("❌ No wallet found!");
 			console.log("Create one with: clawearn wallet create");
@@ -208,7 +218,18 @@ async function handleAccount(args: string[]) {
 			console.error("❌ No wallet found!");
 			process.exit(1);
 		}
-		console.log(`Wallet Address: ${address}`);
+		console.log(`\n═══════════════════════════════════════════════════════════════`);
+		console.log(
+			`                     POLYMARKET ACCOUNT                      `,
+		);
+		console.log(`═══════════════════════════════════════════════════════════════`);
+		console.log(`\nWallet Address: ${address}`);
+		console.log(
+			`Profile:        https://polymarketscan.org/address/${address}`,
+		);
+		console.log(
+			`\n═══════════════════════════════════════════════════════════════\n`,
+		);
 	} else {
 		console.error("Usage: clawearn polymarket account [info]");
 		process.exit(1);

@@ -42,6 +42,8 @@ export interface CancelRequest {
  * - ✅ EIP-712 signing with msgpack
  * - ✅ Exchange endpoint submission
  */
+const HYPERLIQUID_VAULT = "0x1356c899d8c9467c75a39b583fa6f63b6f72eaec";
+
 export async function placeOrder(
 	order: OrderRequest,
 	signer: Wallet,
@@ -63,12 +65,12 @@ export async function placeOrder(
 		const orderAction = formatOrderForApi(order, assetIndex);
 
 		// 4. Sign action with EIP-712
-		const nonce = Date.now();
-		const vaultAddress = undefined; // Use signer's address
+		const nonce = Math.floor(Date.now() / 1000);
+		// For Hyperliquid, use the user's address when signing
 		const signature = await signL1Action(
 			orderAction,
 			nonce,
-			vaultAddress,
+			signer.address,
 			signer,
 		);
 
@@ -112,7 +114,7 @@ export async function placeOrder(
 				data: result,
 			};
 		} else {
-			const errorMsg = (result as any)?.response?.data?.statuses?.[0]?.error || "Unknown error";
+			const errorMsg = (result as any)?.response?.data?.statuses?.[0]?.error || JSON.stringify(result, null, 2);
 			return {
 				status: "error",
 				message: `Order rejected: ${errorMsg}`,
@@ -246,7 +248,7 @@ export async function getPortfolio(userAddress: string): Promise<unknown> {
  */
 export async function getAssetIndex(symbol: string): Promise<number> {
 	try {
-		// First try to get perpetual asset index from meta
+		// Get perpetual asset index from meta
 		const metaResponse = await fetch(`${HYPERLIQUID_API}/info`, {
 			method: "POST",
 			headers: {
@@ -257,44 +259,21 @@ export async function getAssetIndex(symbol: string): Promise<number> {
 			}),
 		});
 
-		if (metaResponse.ok) {
-			const meta = (await metaResponse.json()) as Record<
-				string,
-				Array<{ name: string; index: number }>
-			>;
-
-			if (meta.coins) {
-				for (const coin of meta.coins) {
-					if (coin.name === symbol) {
-						return coin.index;
-					}
-				}
-			}
+		if (!metaResponse.ok) {
+			throw new Error(`Meta API error: ${metaResponse.statusText}`);
 		}
 
-		// If not found in perpetuals, try spot assets
-		const spotMetaResponse = await fetch(`${HYPERLIQUID_API}/info`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				type: "spotMeta",
-			}),
-		});
+		const meta = (await metaResponse.json()) as {
+			universe: Array<{ name: string; index?: number }>;
+		};
 
-		if (spotMetaResponse.ok) {
-			const spotMeta = (await spotMetaResponse.json()) as {
-				tokens: Array<{ name: string; index: number }>;
-				universe: Array<{ tokens: number[] }>;
-			};
-
-			if (spotMeta.tokens) {
-				for (const token of spotMeta.tokens) {
-					if (token.name === symbol) {
-						// For spot, return 10000 + index
-						return 10000 + token.index;
-					}
+		if (meta.universe && Array.isArray(meta.universe)) {
+			// The universe array is already indexed, so find the coin by name
+			for (let i = 0; i < meta.universe.length; i++) {
+				const coin = meta.universe[i];
+				if (coin && coin.name === symbol) {
+					// Array index is the asset index for perpetuals
+					return i;
 				}
 			}
 		}
@@ -319,17 +298,22 @@ export function formatOrderForApi(
 	const isBuy = order.side === "buy";
 
 	return {
-		a: assetIndex, // asset
-		b: isBuy, // isBuy
-		p: order.price.toString(), // price (as string)
-		s: order.size.toString(), // size (as string)
-		r: order.reduceOnly || false, // reduceOnly
-		t: {
-			limit: {
-				tif: order.timeInForce || "Gtc",
+		type: "order",
+		orders: [
+			{
+				a: assetIndex, // asset
+				b: isBuy, // isBuy
+				p: order.price.toString(), // price (as string)
+				s: order.size.toString(), // size (as string)
+				r: order.reduceOnly || false, // reduceOnly
+				t: {
+					limit: {
+						tif: order.timeInForce || "Gtc",
+					},
+				},
+				c: order.clientOrderId || undefined,
 			},
-		},
-		c: order.clientOrderId || undefined,
+		],
 	};
 }
 

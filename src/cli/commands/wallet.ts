@@ -153,9 +153,12 @@ async function showAddress() {
 	console.log(
 		"═══════════════════════════════════════════════════════════════",
 	);
-	console.log(`\n   ${wallet.address}\n`);
+	console.log(`\nAddress:  ${wallet.address}`);
 	console.log(
-		"═══════════════════════════════════════════════════════════════",
+		`Profile:  https://arbiscan.io/address/${wallet.address}`,
+	);
+	console.log(
+		"\n═══════════════════════════════════════════════════════════════",
 	);
 	console.log(
 		"\n📤 Send USDC (Arbitrum) to this address to fund your trading account",

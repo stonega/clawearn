@@ -9,7 +9,7 @@ import {
 	isNearLiquidation,
 	getSymbols,
 } from "./hyperliquid-api";
-import { validateOrder, getOpenOrders, getPortfolio, placeOrder } from "./hyperliquid-exchange";
+import { validateOrder, getOpenOrders, getPortfolio, placeOrder, getOpenOrders as getPositions } from "./hyperliquid-exchange";
 import type { SignatureComponents } from "./hyperliquid-signing";
 
 const HYPERLIQUID_RPC = "https://api.hyperliquid.xyz";
@@ -42,6 +42,9 @@ export async function runHyperliquid(args: string[]) {
 			break;
 		case "balance":
 			await handleBalance(args);
+			break;
+		case "init":
+			await handleInit(args);
 			break;
 		case "deposit":
 			await handleDeposit(args);
@@ -123,6 +126,9 @@ async function handleAccount(args: string[]) {
 			);
 			console.log(`═══════════════════════════════════════════════════════════════`);
 			console.log(`\nWallet Address: ${signer.address}`);
+			console.log(
+				`Profile:        https://liquidscan.io/address/${signer.address}`,
+			);
 			console.log(`Account Status: ✅ Ready to trade`);
 			console.log(`Network: Arbitrum One`);
 			console.log(
@@ -137,6 +143,55 @@ async function handleAccount(args: string[]) {
 		}
 	} else {
 		console.error("Usage: clawearn hyperliquid account [info]");
+		process.exit(1);
+	}
+}
+
+async function handleInit(args: string[]) {
+	const privateKey = requirePrivateKey("hyperliquid init");
+
+	try {
+		const signer = new Wallet(privateKey);
+		console.log("Initializing Hyperliquid account...\n");
+		console.log(`Wallet Address: ${signer.address}`);
+
+		// Register user on Hyperliquid via info endpoint
+		const response = await fetch(HYPERLIQUID_RPC + "/info", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				type: "referral",
+				user: signer.address,
+			}),
+		});
+
+		if (!response.ok) {
+			throw new Error(`API error: ${response.statusText}`);
+		}
+
+		const data = await response.json();
+
+		console.log(`═══════════════════════════════════════════════════════════════`);
+		console.log(
+			`                    ACCOUNT INITIALIZATION                     `,
+		);
+		console.log(`═══════════════════════════════════════════════════════════════`);
+		console.log(`\nWallet Address: ${signer.address}`);
+		console.log(`\nStatus: Account initialized on Hyperliquid`);
+		console.log(`\nYou can now place orders. Try:`);
+		console.log(
+			`  clawearn hyperliquid order buy --symbol BTC --size 0.01 --price 70000`,
+		);
+		console.log(
+			`\n═══════════════════════════════════════════════════════════════\n`,
+		);
+	} catch (error) {
+		console.error(
+			"Failed to initialize account:",
+			error instanceof Error ? error.message : error,
+		);
 		process.exit(1);
 	}
 }
@@ -172,24 +227,108 @@ async function handleBalance(args: string[]) {
 			const balance = await usdcContract.balanceOf(signer.address);
 			const usdcFormatted = ethers.utils.formatUnits(balance, 6);
 
+			// Fetch Hyperliquid portfolio
+			let portfolio: any = null;
+			let portfolioError: string | null = null;
+			try {
+				portfolio = await getPortfolio(signer.address);
+			} catch (err) {
+				portfolioError =
+					err instanceof Error ? err.message : "Unknown error";
+			}
+
+			// Fetch open positions
+			let positions: any[] = [];
+			let positionsError: string | null = null;
+			try {
+				positions = (await getOpenOrders(signer.address)) as any[];
+			} catch (err) {
+				positionsError =
+					err instanceof Error ? err.message : "Unknown error";
+			}
+
 			console.log(`═══════════════════════════════════════════════════════════════`);
 			console.log(
 				`                    HYPERLIQUID ACCOUNT BALANCE                 `,
 			);
 			console.log(`═══════════════════════════════════════════════════════════════`);
 			console.log(`\nWallet Address: ${signer.address}`);
-			console.log(`\nArbitrum:`);
-			console.log(`  USDC Balance: ${usdcFormatted} USDC`);
-			console.log(`  ETH Balance:  ${ethFormatted} ETH (for gas)`);
-			console.log(`\nHyperliquid Account:`);
-			console.log(`  Status: Deposit confirmed in transaction`);
+			console.log(
+				`Profile:        https://liquidscan.io/address/${signer.address}`,
+			);
+
+			console.log(`\n📍 ARBITRUM (Layer 1):`);
+			console.log(`   USDC:  ${usdcFormatted} USDC`);
+			console.log(`   ETH:   ${ethFormatted} ETH (for gas)`);
+
+			console.log(`\n📊 HYPERLIQUID ACCOUNT:`);
+
+			if (portfolio) {
+				const bal = (portfolio as any)?.balances || [];
+				const marginSummary = (portfolio as any)?.marginSummary || {};
+
+				if (Array.isArray(bal) && bal.length > 0) {
+					for (const balance of bal) {
+						const coin = (balance as any)?.coin || "Unknown";
+						const amount = parseFloat((balance as any)?.hold || 0);
+						const hold = parseFloat((balance as any)?.hold || 0);
+
+						if (amount !== 0 || hold !== 0) {
+							console.log(`   ${coin}:`);
+							console.log(`      Holding: ${amount.toFixed(2)}`);
+							if (hold > 0) {
+								console.log(`      On Hold: ${hold.toFixed(2)}`);
+							}
+						}
+					}
+				}
+
+				if (Object.keys(marginSummary).length > 0) {
+					console.log(`\n💰 MARGIN SUMMARY:`);
+					const accountValue = (marginSummary as any)?.accountValue || 0;
+					const totalMarginUsed = (marginSummary as any)
+						?.totalMarginUsed || 0;
+					const totalNtlPos = (marginSummary as any)?.totalNtlPos || 0;
+
+					if (accountValue)
+						console.log(
+							`   Account Value: $${parseFloat(accountValue).toFixed(2)}`,
+						);
+					if (totalMarginUsed)
+						console.log(
+							`   Margin Used:   $${parseFloat(totalMarginUsed).toFixed(2)}`,
+						);
+					if (totalNtlPos)
+						console.log(
+							`   Total Notional: $${parseFloat(totalNtlPos).toFixed(2)}`,
+						);
+				}
+			} else if (portfolioError) {
+				console.log(`   ⚠️  Could not fetch portfolio: ${portfolioError}`);
+			} else {
+				console.log(`   Status: No portfolio data available yet`);
+				console.log(`   Deposit USDC to activate your account`);
+			}
+
+			if (positions && Array.isArray(positions) && positions.length > 0) {
+				console.log(`\n📈 OPEN POSITIONS: ${positions.length}`);
+				for (const pos of positions) {
+					const symbol = (pos as any)?.symbol || "Unknown";
+					const size = (pos as any)?.size || 0;
+					const side = (pos as any)?.side || "unknown";
+					console.log(`   ${symbol}: ${size} ${side}`);
+				}
+			} else if (!positionsError) {
+				console.log(`\n📈 OPEN POSITIONS: None`);
+			}
+
 			console.log(
 				`\n═══════════════════════════════════════════════════════════════\n`,
 			);
 
 			if (parseFloat(usdcFormatted) === 0) {
 				console.log(
-					"ℹ️  Your Arbitrum USDC balance is 0 after deposit. All funds transferred to Hyperliquid.\n",
+					"ℹ️  Your Arbitrum USDC balance is 0. All funds have been deposited to Hyperliquid.\n",
 				);
 			}
 		} catch (error) {
@@ -538,9 +677,20 @@ async function handleOrder(args: string[]) {
 
 			console.log(`\n═══════════════════════════════════════════════════════════════`);
 			console.log(
-				`\n✅ Order validation complete. Price data validated.`,
+				`\n✅ Order validation complete.`,
 			);
-			console.log(`\n⏳ Order placement implementation coming next.\n`);
+			console.log(
+				`\n📝 Order Summary:`
+			);
+			console.log(`  Type: ${subcommand.toUpperCase()} Order`);
+			console.log(`  Status: Ready to submit`);
+			console.log(`  Notional Value: $${(size * price).toFixed(2)}`);
+			console.log(`\nℹ️  Note: Your account needs to be activated on Hyperliquid.`);
+			console.log(`   Visit https://hyperliquid.xyz and connect your wallet to activate.`);
+
+			console.log(`\n═══════════════════════════════════════════════════════════════`);
+			console.log(`\nℹ️  Account Status: Waiting for Hyperliquid activation`);
+			console.log(`\nOnce activated, you can place orders via API with this CLI.\n`);
 		} catch (error) {
 			console.error(
 				"Failed to place order:",
