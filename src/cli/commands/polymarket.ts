@@ -1223,6 +1223,15 @@ async function sendUSDCeToDepositAddress(
 		const decimals = await tokenContract.decimals();
 		const amount = ethers.utils.parseUnits(amountStr, decimals);
 
+		// Check minimum amount (2 USDC)
+		const minAmount = ethers.utils.parseUnits("2", decimals);
+		const amountNumber = parseFloat(amountStr);
+		if (amountNumber < 2) {
+			console.error(`❌ Minimum withdrawal amount is 2 USDC`);
+			console.error(`   You provided: ${amountStr} USDC`);
+			process.exit(1);
+		}
+
 		// Check balance
 		const balance = await tokenContract.balanceOf(wallet.address);
 		if (balance.lt(amount)) {
