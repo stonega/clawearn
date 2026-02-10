@@ -116,7 +116,7 @@ check_bun() {
 
 # Clone or update repository
 setup_repo() {
-    step "Setting up Moltearn CLI..."
+    step "Setting up Clawearn CLI..."
     
     if [ -d "$INSTALL_DIR" ]; then
         info "Existing clawearn installation found at $INSTALL_DIR. Updating..."
@@ -192,7 +192,7 @@ update_path() {
         # Add clawearn to PATH if not already present
         if ! grep -q "$BIN_DIR" "$shell_config" 2>/dev/null; then
             echo "" >> "$shell_config"
-            echo "# Moltearn CLI" >> "$shell_config"
+            echo "# Clawearn CLI" >> "$shell_config"
             echo "$path_export" >> "$shell_config"
             info "Added $BIN_DIR to PATH in $shell_config"
         fi
@@ -249,7 +249,7 @@ print_success() {
 
 # Uninstall function
 uninstall() {
-    step "Uninstalling Moltearn CLI..."
+    step "Uninstalling Clawearn CLI..."
     
     # Remove installation directory
     if [ -d "$INSTALL_DIR" ]; then
@@ -264,7 +264,7 @@ uninstall() {
     fi
     
     echo ""
-    success "Moltearn CLI has been uninstalled"
+    success "Clawearn CLI has been uninstalled"
     info "You may want to remove the PATH entry from your shell config"
 }
 
@@ -279,17 +279,17 @@ main() {
     
     # Check for help flag
     if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
-        echo "Moltearn CLI Installer"
+        echo "Clawearn CLI Installer"
         echo ""
         echo "Usage: ./install.sh [OPTIONS]"
         echo ""
         echo "Options:"
         echo "  -h, --help        Show this help message"
-        echo "  -u, --uninstall   Uninstall Moltearn CLI"
+        echo "  -u, --uninstall   Uninstall Clawearn CLI"
         echo ""
         echo "Environment Variables:"
-        echo "  CLAW_EARN_INSTALL_DIR    Installation directory (default: ~/.clawearn)"
-        echo "  CLAW_EARN_BIN_DIR        Binary directory (default: ~/.local/bin)"
+        echo "  CLAWEARN_INSTALL_DIR    Installation directory (default: ~/.clawearn)"
+        echo "  CLAWEARN_BIN_DIR        Binary directory (default: ~/.local/bin)"
         exit 0
     fi
     
