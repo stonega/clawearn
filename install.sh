@@ -122,7 +122,7 @@ setup_repo() {
         info "Existing clawearn installation found at $INSTALL_DIR. Updating..."
         cd "$INSTALL_DIR"
         if [ -d ".git" ]; then
-            git pull --quiet origin main 2>/dev/null || warn "Could not update from git"
+            git fetch --quiet origin main && git reset --hard origin/main >/dev/null 2>&1 || warn "Could not update from git"
         else
             git clone --quiet --depth 1 "$REPO_URL" "$INSTALL_DIR" 2>/dev/null || {
                 error "Failed to clone repository. Check your internet connection."
