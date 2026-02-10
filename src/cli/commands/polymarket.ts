@@ -13,6 +13,7 @@ const ARB_USDCE_ADDRESS = "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"; // Bridg
 const POLYGON_USDC_ADDRESS = "0x2791bca1f2de4661ed88a30c99a7a9449aa84174"; // USDC on Polygon
 const POLYGON_POL_ADDRESS = "0x0000000000000000000000000000000000001010"; // POL (native) on Polygon
 const CLOB_EXCHANGE_ADDRESS = "0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E"; // Polymarket CLOB Exchange on Polygon
+const CTF_ADDRESS = "0x4D97DCd97B9Ce86b378Ed618eCf07413Cd569B3E"; // Conditional Token Framework on Polygon
 const USDC_DECIMALS = 6;
 
 /**
@@ -48,6 +49,9 @@ export async function runPolymarket(args: string[]) {
 			break;
 		case "withdraw":
 			await handleWithdraw(args);
+			break;
+		case "redeem":
+			await handleRedeem(args);
 			break;
 		case "refuel":
 			await handleRefuel(args.slice(1));
@@ -953,6 +957,22 @@ const ERC20_ABI = [
 	"function transfer(address to, uint256 amount) returns (bool)",
 ];
 
+// Conditional Token Framework ABI
+const CTF_ABI = [
+	{
+		inputs: [
+			{ internalType: "contract IERC20", name: "collateralToken", type: "address" },
+			{ internalType: "bytes32", name: "parentCollectionId", type: "bytes32" },
+			{ internalType: "bytes32", name: "conditionId", type: "bytes32" },
+			{ internalType: "uint256[]", name: "indexSets", type: "uint256[]" },
+		],
+		name: "redeemPositions",
+		outputs: [],
+		stateMutability: "nonpayable",
+		type: "function",
+	},
+];
+
 // L2Pass Gas Refuel Contract ABI
 const REFUEL_ABI = [
 	{
@@ -1187,6 +1207,114 @@ async function handleWithdraw(args: string[]) {
 	} catch (error) {
 		console.error(
 			"Failed to create withdrawal address:",
+			error instanceof Error ? error.message : error,
+		);
+		process.exit(1);
+	}
+}
+
+/**
+ * Redeem winning conditional tokens for collateral
+ */
+async function handleRedeem(args: string[]) {
+	const conditionIdArg = getArg(args, "--condition-id");
+	const indexSetsArg = getArg(args, "--index-sets");
+
+	if (!conditionIdArg || !indexSetsArg) {
+		console.error(
+			"Usage: clawearn polymarket redeem --condition-id <id> --index-sets <sets>",
+		);
+		console.error("Example: clawearn polymarket redeem --condition-id 0x... --index-sets 3");
+		process.exit(1);
+	}
+
+	const privateKey = requirePrivateKey(args, "polymarket redeem");
+
+	try {
+		const provider = new ethers.providers.JsonRpcProvider(POLYGON_RPC);
+		const wallet = new Wallet(privateKey, provider);
+
+		// Parse condition ID
+		if (!conditionIdArg.startsWith("0x") || conditionIdArg.length !== 66) {
+			console.error("❌ Invalid condition ID format (must be 0x... 32 bytes)");
+			process.exit(1);
+		}
+
+		// Parse index sets - can be comma-separated (e.g., "1,2" or "3")
+		const indexSets: ethers.BigNumber[] = indexSetsArg
+			.split(",")
+			.map((s) => {
+				const num = parseInt(s.trim(), 10);
+				if (isNaN(num) || num < 1) {
+					console.error(`❌ Invalid index set: ${s}`);
+					process.exit(1);
+				}
+				return ethers.BigNumber.from(num);
+			});
+
+		const parentCollectionId = ethers.constants.HashZero; // Null for Polymarket
+
+		console.log("📤 Redeeming Conditional Tokens");
+		console.log(`Wallet:         ${wallet.address}`);
+		console.log(`Condition ID:   ${conditionIdArg}`);
+		console.log(`Index Sets:     ${indexSets.map((s) => s.toString()).join(", ")}`);
+		console.log(`Collateral:     USDC (${POLYGON_USDC_ADDRESS})`);
+		console.log("");
+
+		// Create CTF contract instance
+		const ctfContract = new ethers.Contract(
+			CTF_ADDRESS,
+			CTF_ABI,
+			wallet,
+		);
+
+		// Estimate gas
+		console.log("Estimating gas...");
+		const gasEstimate = await ctfContract.estimateGas.redeemPositions(
+			POLYGON_USDC_ADDRESS,
+			parentCollectionId,
+			conditionIdArg,
+			indexSets,
+		);
+
+		// Add 20% buffer
+		const adjustedGas = gasEstimate.mul(120).div(100);
+
+		// Get gas price
+		const feeData = await provider.getFeeData();
+		const gasPrice = feeData.gasPrice;
+
+		console.log("Sending redemption transaction...");
+
+		// Execute redemption
+		const tx = await ctfContract.redeemPositions(
+			POLYGON_USDC_ADDRESS,
+			parentCollectionId,
+			conditionIdArg,
+			indexSets,
+			{
+				gasPrice: gasPrice || ethers.utils.parseUnits("50", "gwei"),
+				gasLimit: adjustedGas,
+			},
+		);
+
+		console.log(`✓ Transaction sent!`);
+		console.log(`  Hash: ${tx.hash}`);
+		console.log("  Waiting for confirmation...\n");
+
+		const receipt = await tx.wait();
+
+		if (receipt && receipt.status === 1) {
+			console.log("✅ Redemption successful!");
+			console.log(`   Block: ${receipt.blockNumber}`);
+			console.log("   Your USDC collateral has been released");
+		} else {
+			console.error("❌ Redemption transaction failed!");
+			process.exit(1);
+		}
+	} catch (error) {
+		console.error(
+			"Failed to redeem positions:",
 			error instanceof Error ? error.message : error,
 		);
 		process.exit(1);
@@ -1608,9 +1736,14 @@ DEPOSIT COMMANDS:
        --usdce                      Use bridged USDC.e instead of native USDC
 
 WITHDRAW COMMANDS:
-     withdraw [--amount <amount>] [--recipient-address <addr>]
-       --amount <amount>            Amount of USDC.e to withdraw (optional)
-       --recipient-address <addr>   Recipient wallet address (defaults to your wallet)
+      withdraw [--amount <amount>] [--recipient-address <addr>]
+        --amount <amount>            Amount of USDC.e to withdraw (optional)
+        --recipient-address <addr>   Recipient wallet address (defaults to your wallet)
+
+REDEEM COMMANDS:
+      redeem
+        --condition-id <id>          Condition ID (bytes32 format)
+        --index-sets <sets>          Index sets (comma-separated integers, e.g., 1,2 or 3)
 
 REFUEL COMMANDS:
     refuel estimate
