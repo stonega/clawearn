@@ -251,7 +251,6 @@ async function handleBalance(args: string[]) {
 			try {
 				// Fetch balances on Polygon
 				const polygonProvider = new ethers.providers.JsonRpcProvider(POLYGON_RPC);
-				const polygonWallet = new ethers.Wallet(privateKey, polygonProvider);
 
 				// Fetch USDC balance on Polygon
 				const usdcContract = new ethers.Contract(
