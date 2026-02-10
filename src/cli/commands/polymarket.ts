@@ -1111,15 +1111,21 @@ async function handleWithdraw(args: string[]) {
 	// Recipient defaults to source address
 	const recipientAddr = getArg(args, "--recipient-address") || sourceAddress;
 
+	// Validate recipient address
+	if (!ethers.utils.isAddress(recipientAddr)) {
+		console.error(`❌ Invalid recipient address: ${recipientAddr}`);
+		process.exit(1);
+	}
+
 	try {
-		// Arbitrum chain ID: 42161, USDC.e address on Arbitrum
+		// Arbitrum chain ID: 42161, native USDC address on Arbitrum
 		const toChainId = "42161";
-		const toTokenAddress = ARB_USDCE_ADDRESS;
+		const toTokenAddress = ARB_USDC_ADDRESS;
 
 		console.log("Creating withdrawal address for Arbitrum...");
 		console.log(`Source:      ${sourceAddress}`);
 		console.log(`Destination: Arbitrum (Chain ID: ${toChainId})`);
-		console.log(`Token:       USDC.e (${toTokenAddress})`);
+		console.log(`Token:       USDC (${toTokenAddress})`);
 		console.log(
 			`Recipient:   ${recipientAddr}${recipientAddr === sourceAddress ? " (same as source)" : ""}`,
 		);
