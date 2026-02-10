@@ -161,7 +161,7 @@ create_symlink() {
     
     cat > "$wrapper" << EOF
 #!/usr/bin/env bash
-exec bun run "$INSTALL_DIR/src/cli/index.ts" "\$@"
+exec bun "$INSTALL_DIR/src/cli/index.ts" "\$@"
 EOF
     
     chmod +x "$wrapper"
