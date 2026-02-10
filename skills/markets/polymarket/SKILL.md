@@ -1,14 +1,14 @@
 ---
 name: polymarket-trading
-version: 1.5.0
-description: Complete guide to placing orders on Polymarket with clawearn. Fully functional with automatic USDC approval, dynamic gas pricing, market discovery, price data, automated order execution, deposits, withdrawals, and comprehensive troubleshooting.
+version: 1.6.0
+description: Complete guide to placing orders on Polymarket with clawearn. Fully functional with automatic USDC approval, dynamic gas pricing, market discovery, price data, automated order execution, deposits, withdrawals, token redemption, and comprehensive troubleshooting.
 homepage: https://www.polymarket.com
 documentation: https://docs.polymarket.com
 metadata: 
   category: trading
   platform: polymarket
   requires_auth: true
-  features: ["market-search", "price-feeds", "order-placement", "balance-checking", "portfolio-tracking", "gas-refuel", "deposits", "withdrawals"]
+  features: ["market-search", "price-feeds", "order-placement", "balance-checking", "portfolio-tracking", "gas-refuel", "deposits", "withdrawals", "token-redemption"]
 ---
 
 # Polymarket Trading Skill 📈
@@ -25,6 +25,7 @@ Trade prediction markets directly from your OpenClaw bot using Clawearn.
 - 💳 Deposit USDC from Arbitrum to Polymarket
 - 💸 Withdraw USDC.e to Arbitrum
 - ⛽ Refuel POL gas for Polygon chain
+- 🏆 Redeem winning conditional tokens for USDC collateral
 - 🤖 Build autonomous trading strategies
 - 🔐 Automatic ERC20 USDC approval (one-time on first order)
 
@@ -172,6 +173,43 @@ clawearn polymarket refuel refuel --amount 1 --recipient 0x...
 - `--amount <amount>`: Amount of POL to refuel (required)
 - `--recipient <address>`: Recipient address on Polygon (defaults to your wallet address)
 - `--private-key <key>`: Private key (optional, uses stored wallet if not provided)
+
+### 4.5. Token Redemption
+
+After a market resolves, you can redeem winning conditional tokens for USDC collateral.
+
+**Redeem winning tokens:**
+```bash
+clawearn polymarket redeem \
+  --condition-id 0x1234567890abcdef... \
+  --index-sets 1
+```
+
+**Redeem multiple outcomes:**
+```bash
+clawearn polymarket redeem \
+  --condition-id 0x1234567890abcdef... \
+  --index-sets 1,2
+```
+
+**What is redemption?**
+- After a market resolves, the Polymarket team reports the payout vector on-chain
+- Your winning conditional tokens become redeemable for their underlying USDC
+- The `redeem` command burns your tokens and releases the collateral to your wallet
+- This is how you claim your winnings after a market resolves in your favor
+
+**Parameters:**
+- `--condition-id <id>`: The condition ID (bytes32 format, starts with 0x and is 66 characters)
+- `--index-sets <sets>`: Index sets representing winning outcomes (comma-separated integers)
+  - For binary markets: typically `1` (YES), `2` (NO), or `3` (both, for partial fills)
+  - The exact values depend on the market structure
+
+**How to find condition ID:**
+- Check your portfolio on Polymarket dashboard
+- Get it from historical order/position data
+- Ask in Polymarket Discord for help identifying your market's condition ID
+
+**Minimum withdrawal:** 2 USDC (enforced for deposits/withdrawals)
 
 ### 5. Market Discovery
 
@@ -793,6 +831,39 @@ clawearn polymarket refuel refuel --amount 0.5
 
 # 5. Optional: Refuel to a different address
 clawearn polymarket refuel refuel --amount 1 --recipient 0x...
+```
+
+### Workflow: Redeem winning tokens after market resolves
+
+```bash
+# 1. Wait for your market to resolve on Polymarket
+# You can check the status on: https://polymarket.com
+
+# 2. Once resolved, you need the condition ID
+# Find it from the Polymarket dashboard or from your order history
+# Example condition ID: 0x1234567890abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdef
+
+# 3. Determine the winning outcome index sets
+# For binary markets (YES/NO):
+#   - Index set 1 = YES outcome
+#   - Index set 2 = NO outcome
+#   - Index set 3 = Both (for partial fills)
+
+# 4. Redeem your winning tokens
+clawearn polymarket redeem \
+  --condition-id 0x1234567890abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdef \
+  --index-sets 1
+
+# 5. Confirm the transaction
+# Output shows:
+# ✓ Transaction sent!
+# Hash: 0xabc123...
+# Waiting for confirmation...
+# ✅ Redemption successful!
+# Your USDC collateral has been released
+
+# 6. Check your balance - your USDC is now claimable
+clawearn polymarket balance check
 ```
 
 ---
