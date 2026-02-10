@@ -1148,10 +1148,10 @@ async function handleWithdraw(args: string[]) {
 		);
 
 		if (!response.ok) {
-			const error = await response.json();
+			const error = (await response.json()) as { error?: string };
 			throw new Error(
 				error.error ||
-					`API error: ${response.status} ${response.statusText}`,
+				`API error: ${response.status} ${response.statusText}`,
 			);
 		}
 
@@ -1171,6 +1171,9 @@ async function handleWithdraw(args: string[]) {
 				amountStr,
 			);
 		} else {
+			console.log(
+				"\nTo withdraw automatically, run with --amount <AMOUNT>",
+			);
 			console.log("\n⚠️  Instructions:");
 			console.log(
 				"1. Send USDC.e from your Polymarket wallet to the address above",
@@ -1240,10 +1243,10 @@ async function sendUSDCeToDepositAddress(
 
 		// Get current gas prices for Polygon
 		const feeData = await provider.getFeeData();
-		const gasPrice = feeData.gasPrice;
+		const gasPrice = feeData.gasPrice?.mul(120).div(100);
 
 		// Estimate gas for the transfer
-		const gasEstimate = await tokenContract.estimateGas.transfer(
+		const gasEstimate = await tokenContract.estimateGas.transfer!(
 			depositAddress,
 			amount,
 		);
