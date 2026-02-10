@@ -6,8 +6,28 @@ const HOST = "https://clob.polymarket.com";
 const GAMMA_API = "https://gamma-api.polymarket.com";
 const DATA_API = "https://data-api.polymarket.com";
 const CHAIN_ID = 137; // Polygon mainnet
-const ARBITRUM_RPC = "https://arb1.arbitrum.io/rpc";
-const POLYGON_RPC = "https://polygon-rpc.com/";
+
+// RPC endpoints for Polygon (randomly selected)
+const POLYGON_RPC_LIST = [
+	"https://polygon-rpc.com/",
+	"https://rpc-mainnet.maticvigil.com",
+	"https://polygon-mainnet.public.blastapi.io",
+];
+
+// RPC endpoints for Arbitrum (randomly selected)
+const ARBITRUM_RPC_LIST = [
+	"https://arb1.arbitrum.io/rpc",
+	"https://arbitrum-mainnet.infura.io/v3/",
+	"https://arbitrum-one.publicnode.com",
+];
+
+// Helper function to get random RPC endpoint
+function getRandomRpc(rpcList: string[]): string {
+	return rpcList[Math.floor(Math.random() * rpcList.length)];
+}
+
+const POLYGON_RPC = getRandomRpc(POLYGON_RPC_LIST);
+const ARBITRUM_RPC = getRandomRpc(ARBITRUM_RPC_LIST);
 const ARB_USDC_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // Native USDC on Arbitrum
 const ARB_USDCE_ADDRESS = "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"; // Bridged USDC.e on Arbitrum
 const POLYGON_USDC_ADDRESS = "0x2791bca1f2de4661ed88a30c99a7a9449aa84174"; // USDC on Polygon
