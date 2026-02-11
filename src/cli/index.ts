@@ -3,6 +3,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { runHyperliquid } from "./commands/hyperliquid";
 import { runPolymarket } from "./commands/polymarket";
 import { runWallet } from "./commands/wallet";
 
@@ -25,6 +26,10 @@ async function main() {
 			case "polymarket":
 			case "poly":
 				await runPolymarket(Bun.argv.slice(3));
+				break;
+			case "hyperliquid":
+			case "hl":
+				await runHyperliquid(Bun.argv.slice(3));
 				break;
 			case "uninstall":
 				await handleUninstall(Bun.argv.slice(3));
@@ -91,11 +96,12 @@ ClawEarn - Trading CLI
 Usage: clawearn <command> [subcommand] [options]
 
 COMMANDS:
-   wallet              Wallet management (create, show, send)
-   polymarket, poly    Polymarket trading commands
-   uninstall           Uninstall CLI (preserves wallet)
-   version, -v         Show version
-   help, -h            Show this help
+   wallet                    Wallet management (create, show, send)
+   polymarket, poly          Polymarket trading commands
+   hyperliquid, hl           Hyperliquid perpetual futures trading
+   uninstall                 Uninstall CLI (preserves wallet)
+   version, -v               Show version
+   help, -h                  Show this help
 
 GETTING STARTED:
   # 1. Create a wallet on this device
@@ -106,6 +112,7 @@ GETTING STARTED:
 
   # 3. Start trading!
   clawearn polymarket market search --query "bitcoin"
+  clawearn hyperliquid market list
 
 EXAMPLES:
   # Show your wallet address (to receive funds)
@@ -123,9 +130,15 @@ EXAMPLES:
     --price 0.50 \\
     --size 10
 
+  # List Hyperliquid markets
+  clawearn hyperliquid market list
+
+  # Buy a perpetual on Hyperliquid
+  clawearn hl order buy --coin ETH --price 3000 --size 0.1
+
 For more information on a specific command, use:
   clawearn <command> help
-`);
+	`);
 }
 
 main().catch((error) => {
