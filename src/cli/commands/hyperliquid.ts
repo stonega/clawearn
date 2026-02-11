@@ -5,10 +5,23 @@ import {
 	SubscriptionClient,
 	WebSocketTransport,
 } from "@nktkas/hyperliquid";
+import { ethers, Wallet } from "ethers";
 import { privateKeyToAccount } from "viem/accounts";
 import { getStoredAddress, getStoredPrivateKey } from "./wallet";
 
+// Arbitrum RPC endpoints
+const ARBITRUM_RPC_LIST = [
+	"https://arb1.arbitrum.io/rpc",
+	"https://arbitrum-one.publicnode.com",
+];
+
+function getRandomRpc(rpcList: string[]): string {
+	return rpcList[Math.floor(Math.random() * rpcList.length)];
+}
+
+const ARBITRUM_RPC = getRandomRpc(ARBITRUM_RPC_LIST);
 const HYPERLIQUID_VAULT_ARBITRUM = "0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7";
+const ARB_USDC_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // Native USDC on Arbitrum
 const USDC_DECIMALS = 6;
 const MIN_DEPOSIT_USDC = 5;
 
@@ -452,27 +465,93 @@ async function handlePosition(args: string[]) {
 }
 
 async function handleDeposit(args: string[]) {
-	const subcommand = args[1];
+	const privateKey = requirePrivateKey(args, "deposit");
+	const amountArg = getArg(args, "--amount");
 
-	if (!subcommand || subcommand === "info") {
+	if (!amountArg) {
+		console.error("❌ --amount argument required");
+		console.log("Example: clawearn hyperliquid deposit --amount 100");
+		process.exit(1);
+	}
+
+	const amount = Number(amountArg);
+	if (Number.isNaN(amount) || amount < MIN_DEPOSIT_USDC) {
+		console.error(`❌ Deposit amount must be at least ${MIN_DEPOSIT_USDC} USDC`);
+		console.error(`   You entered: ${amountArg}`);
+		process.exit(1);
+	}
+
+	try {
+		const provider = new ethers.providers.JsonRpcProvider(ARBITRUM_RPC);
+		const signer = new Wallet(privateKey, provider);
+
+		// ERC20 ABI for transfer
+		const erc20ABI = [
+			"function transfer(address to, uint256 amount) returns (bool)",
+			"function balanceOf(address account) view returns (uint256)",
+		];
+
+		const usdcContract = new ethers.Contract(
+			ARB_USDC_ADDRESS,
+			erc20ABI,
+			signer,
+		);
+
+		// Check balance
+		const balance = (await usdcContract.balanceOf(
+			signer.address,
+		)) as ethers.BigNumber;
+		const amountWei = ethers.utils.parseUnits(amountArg, USDC_DECIMALS);
+
+		if (balance.lt(amountWei)) {
+			console.error("❌ Insufficient USDC balance");
+			console.error(
+				`   Available: ${ethers.utils.formatUnits(balance, USDC_DECIMALS)} USDC`,
+			);
+			console.error(`   Required: ${amountArg} USDC`);
+			process.exit(1);
+		}
+
 		console.log(`\n═══════════════════════════════════════════════════════════════`);
 		console.log(`                    HYPERLIQUID DEPOSIT                      `);
 		console.log(`═══════════════════════════════════════════════════════════════\n`);
+		console.log("📤 Deposit Details:");
+		console.log(`   Amount: ${amountArg} USDC`);
+		console.log(`   To: ${HYPERLIQUID_VAULT_ARBITRUM}`);
+		console.log(`   From: ${signer.address}`);
+		console.log("\nSending USDC...");
 
-		console.log("To deposit USDC to Hyperliquid:");
-		console.log(`\n1. Send USDC on Arbitrum to the Hyperliquid vault:`);
-		console.log(`   ${HYPERLIQUID_VAULT_ARBITRUM}`);
-		console.log(`\n2. Minimum deposit: ${MIN_DEPOSIT_USDC} USDC`);
-		console.log(`\n3. Your deposit should appear in your account within 1-2 minutes`);
-		console.log(`\n4. Verify your balance with:`);
-		console.log(`   clawearn hyperliquid balance\n`);
+		const tx = await usdcContract.transfer(
+			HYPERLIQUID_VAULT_ARBITRUM,
+			amountWei,
+		);
 
-		console.log(`═══════════════════════════════════════════════════════════════\n`);
-		return;
+		console.log(`✓ Transaction sent!`);
+		console.log(`   Hash: ${tx.hash}`);
+		console.log("   Waiting for confirmation...\n");
+
+		const receipt = await tx.wait();
+
+		if (receipt && receipt.status === 1) {
+			console.log("✅ Deposit successful!");
+			console.log(
+				`   ${amountArg} USDC will be available in your Hyperliquid account shortly`,
+			);
+			console.log(`\nVerify your balance with:`);
+			console.log(`   clawearn hyperliquid balance`);
+		} else {
+			console.error("❌ Deposit transaction failed!");
+			process.exit(1);
+		}
+
+		console.log(`\n═══════════════════════════════════════════════════════════════\n`);
+	} catch (error) {
+		console.error(
+			"Failed to deposit:",
+			error instanceof Error ? error.message : error,
+		);
+		process.exit(1);
 	}
-
-	console.error(`Unknown deposit subcommand: ${subcommand}`);
-	process.exit(1);
 }
 
 async function handleWithdraw(args: string[]) {
@@ -581,8 +660,8 @@ POSITION COMMANDS:
    position             View your open positions
 
 DEPOSIT COMMANDS:
-   deposit              Show deposit instructions
-   deposit info         Same as above
+   deposit              Deposit USDC to Hyperliquid
+     --amount <amount>          Amount to deposit (required, minimum 5 USDC)
 
 WITHDRAW COMMANDS:
    withdraw             Withdraw USDC to Arbitrum
@@ -608,8 +687,8 @@ OTHER EXAMPLES:
    # View open positions
    clawearn hyperliquid position
 
-   # Get deposit instructions
-   clawearn hyperliquid deposit
+   # Deposit 100 USDC
+   clawearn hyperliquid deposit --amount 100
 
    # Withdraw 100 USDC to your wallet
    clawearn hyperliquid withdraw --amount 100
