@@ -1,7 +1,7 @@
 {
 	"name": "clawearn",
-	"version": "0.3.0",
-	"description": "Prediction market trading CLI",
+	"version": "0.4.0",
+	"description": "Wallet and market access for openclaw",
 	"module": "index.ts",
 	"type": "module",
 	"bin": {

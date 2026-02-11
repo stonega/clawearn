@@ -7,7 +7,7 @@ import { runHyperliquid } from "./commands/hyperliquid";
 import { runPolymarket } from "./commands/polymarket";
 import { runWallet } from "./commands/wallet";
 
-const VERSION = "0.3.0";
+const VERSION = "0.4.0";
 
 // Command routing
 const command = Bun.argv[2];
