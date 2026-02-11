@@ -47,6 +47,9 @@ export async function runHyperliquid(args: string[]) {
 		case "market":
 			await handleMarket(args);
 			break;
+		case "prices":
+			await handleAllPrices(args);
+			break;
 		case "price":
 			await handlePrice(args);
 			break;
@@ -55,6 +58,9 @@ export async function runHyperliquid(args: string[]) {
 			break;
 		case "position":
 			await handlePosition(args);
+			break;
+		case "history":
+			await handleHistory(args);
 			break;
 		case "deposit":
 			await handleDeposit(args);
@@ -250,6 +256,30 @@ async function handleMarket(args: string[]) {
 	process.exit(1);
 }
 
+async function handleAllPrices(args: string[]) {
+	try {
+		const client = new InfoClient({ transport: new HttpTransport() });
+		const mids = await client.allMids();
+
+		console.log(`\n═══════════════════════════════════════════════════════════════`);
+		console.log(`                    ALL MIDPRICES                            `);
+		console.log(`═══════════════════════════════════════════════════════════════\n`);
+
+		const coins = Object.entries(mids).sort();
+		for (const [coin, price] of coins) {
+			console.log(`  ${coin.padEnd(8)} ${price}`);
+		}
+
+		console.log(`\n═══════════════════════════════════════════════════════════════\n`);
+	} catch (error) {
+		console.error(
+			"Failed to fetch prices:",
+			error instanceof Error ? error.message : error,
+		);
+		process.exit(1);
+	}
+}
+
 async function handlePrice(args: string[]) {
 	const coinArg = getArg(args, "--coin");
 	if (!coinArg) {
@@ -260,21 +290,14 @@ async function handlePrice(args: string[]) {
 
 	try {
 		const client = new InfoClient({ transport: new HttpTransport() });
-		const book = await client.l2Book({ coin: coinArg });
+		const mids = await client.allMids();
 
-		if (!book.levels || book.levels.length < 2) {
-			console.error("❌ No price data available");
+		if (!mids[coinArg]) {
+			console.error(`❌ Coin not found: ${coinArg}`);
 			process.exit(1);
 		}
 
-		const bestBid = book.levels[0][0];
-		const bestAsk = book.levels[1][0];
-		const mid = (Number(bestBid.px) + Number(bestAsk.px)) / 2;
-
-		console.log(`\n${coinArg} Price:`);
-		console.log(`  Bid: ${bestBid.px}`);
-		console.log(`  Ask: ${bestAsk.px}`);
-		console.log(`  Mid: ${mid.toFixed(2)}\n`);
+		console.log(`\n${coinArg} Mid Price: ${mids[coinArg]}\n`);
 	} catch (error) {
 		console.error(
 			"Failed to fetch price:",
@@ -350,7 +373,21 @@ async function handleOrder(args: string[]) {
 
 			if (result.status === "ok") {
 				console.log("✓ Order placed successfully!");
-				console.log(`Status: ${JSON.stringify(result.response)}`);
+
+				// Parse order status
+				const statuses = (result.response as any)?.data?.statuses || [];
+				if (statuses.length > 0) {
+					const status = statuses[0];
+					if (status.resting) {
+						console.log(
+							`Status: RESTING (Order ID: ${status.resting.oid})`,
+						);
+					} else if (status.filled) {
+						console.log(
+							`Status: FILLED (${status.filled.totalSz} @ ${status.filled.avgPx})`,
+						);
+					}
+				}
 			} else {
 				console.error("❌ Order failed:", result);
 				process.exit(1);
@@ -458,6 +495,47 @@ async function handlePosition(args: string[]) {
 	} catch (error) {
 		console.error(
 			"Failed to fetch positions:",
+			error instanceof Error ? error.message : error,
+		);
+		process.exit(1);
+	}
+}
+
+async function handleHistory(args: string[]) {
+	const address = getStoredAddress();
+	if (!address) {
+		console.error("❌ No wallet found!");
+		process.exit(1);
+	}
+
+	try {
+		const client = new InfoClient({ transport: new HttpTransport() });
+		const fills = await client.userFills({ user: address });
+
+		console.log(`\n═══════════════════════════════════════════════════════════════`);
+		console.log(`                    TRADE HISTORY                             `);
+		console.log(`═══════════════════════════════════════════════════════════════\n`);
+
+		if (fills && fills.length > 0) {
+			// Show most recent trades first
+			const recentFills = fills.slice(0, 20);
+			for (const fill of recentFills) {
+				const time = new Date(fill.time).toLocaleString();
+				const side = fill.side === "B" ? "BUY" : "SELL";
+				console.log(`${time} ${side.padEnd(4)} ${fill.coin.padEnd(8)} ${fill.sz} @ ${fill.px}`);
+			}
+
+			if (fills.length > 20) {
+				console.log(`\n(Showing 20 most recent of ${fills.length} fills)`);
+			}
+		} else {
+			console.log("No trade history");
+		}
+
+		console.log(`\n═══════════════════════════════════════════════════════════════\n`);
+	} catch (error) {
+		console.error(
+			"Failed to fetch trade history:",
 			error instanceof Error ? error.message : error,
 		);
 		process.exit(1);
@@ -640,8 +718,9 @@ MARKET COMMANDS:
      --coin <coin>              Coin name (e.g., ETH, BTC)
 
 PRICE COMMANDS:
-   price                Get current bid/ask/mid price
-     --coin <coin>              Coin name
+   prices               Show all coin mid prices
+   price                Get mid price for a coin
+     --coin <coin>              Coin name (required)
 
 ORDER COMMANDS:
    order buy            Place a buy order
@@ -659,6 +738,9 @@ ORDER COMMANDS:
 POSITION COMMANDS:
    position             View your open positions
 
+HISTORY COMMANDS:
+   history              View your recent trades (last 20 fills)
+
 DEPOSIT COMMANDS:
    deposit              Deposit USDC to Hyperliquid
      --amount <amount>          Amount to deposit (required, minimum 5 USDC)
@@ -674,10 +756,13 @@ WORKFLOW: List Markets → Check Price → Place Order
    # 1. List available coins
    clawearn hyperliquid market list
 
-   # 2. Check price for a coin
+   # 2. Check all mid prices
+   clawearn hyperliquid prices
+
+   # 3. Check price for a specific coin
    clawearn hyperliquid price --coin ETH
 
-   # 3. Place a buy order
+   # 4. Place a buy order
    clawearn hyperliquid order buy --coin ETH --price 3000 --size 0.1
 
 OTHER EXAMPLES:
@@ -686,6 +771,9 @@ OTHER EXAMPLES:
 
    # View open positions
    clawearn hyperliquid position
+
+   # View recent trade history
+   clawearn hyperliquid history
 
    # Deposit 100 USDC
    clawearn hyperliquid deposit --amount 100
