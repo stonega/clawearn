@@ -24,6 +24,7 @@ const HYPERLIQUID_VAULT_ARBITRUM = "0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7";
 const ARB_USDC_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // Native USDC on Arbitrum
 const USDC_DECIMALS = 6;
 const MIN_DEPOSIT_USDC = 5;
+const MIN_WITHDRAW_USDC = 2;
 
 /**
  * Run hyperliquid subcommand
@@ -644,8 +645,8 @@ async function handleWithdraw(args: string[]) {
 	}
 
 	const amount = Number(amountArg);
-	if (Number.isNaN(amount) || amount < MIN_DEPOSIT_USDC) {
-		console.error(`❌ Withdrawal amount must be at least ${MIN_DEPOSIT_USDC} USDC`);
+	if (Number.isNaN(amount) || amount < MIN_WITHDRAW_USDC) {
+		console.error(`❌ Withdrawal amount must be at least ${MIN_WITHDRAW_USDC} USDC`);
 		console.error(`   You entered: ${amountArg}`);
 		process.exit(1);
 	}
@@ -747,7 +748,7 @@ DEPOSIT COMMANDS:
 
 WITHDRAW COMMANDS:
    withdraw             Withdraw USDC to Arbitrum
-     --amount <amount>          Amount to withdraw (required)
+     --amount <amount>          Amount to withdraw (required, minimum 2 USDC)
      --recipient <address>      Recipient address (defaults to your wallet)
 
 EXAMPLES:
