@@ -10,7 +10,7 @@ import { getStoredAddress, getStoredPrivateKey } from "./wallet";
 
 const HYPERLIQUID_VAULT_ARBITRUM = "0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7";
 const USDC_DECIMALS = 6;
-const MIN_DEPOSIT_USDC = 10;
+const MIN_DEPOSIT_USDC = 5;
 
 /**
  * Run hyperliquid subcommand
