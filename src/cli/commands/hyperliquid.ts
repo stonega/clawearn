@@ -10,6 +10,7 @@ import { getStoredAddress, getStoredPrivateKey } from "./wallet";
 
 const HYPERLIQUID_VAULT_ARBITRUM = "0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7";
 const USDC_DECIMALS = 6;
+const MIN_DEPOSIT_USDC = 10;
 
 /**
  * Run hyperliquid subcommand
@@ -461,8 +462,9 @@ async function handleDeposit(args: string[]) {
 		console.log("To deposit USDC to Hyperliquid:");
 		console.log(`\n1. Send USDC on Arbitrum to the Hyperliquid vault:`);
 		console.log(`   ${HYPERLIQUID_VAULT_ARBITRUM}`);
-		console.log(`\n2. Your deposit should appear in your account within 1-2 minutes`);
-		console.log(`\n3. Verify your balance with:`);
+		console.log(`\n2. Minimum deposit: ${MIN_DEPOSIT_USDC} USDC`);
+		console.log(`\n3. Your deposit should appear in your account within 1-2 minutes`);
+		console.log(`\n4. Verify your balance with:`);
 		console.log(`   clawearn hyperliquid balance\n`);
 
 		console.log(`═══════════════════════════════════════════════════════════════\n`);
@@ -481,6 +483,13 @@ async function handleWithdraw(args: string[]) {
 	if (!amountArg) {
 		console.error("❌ --amount argument required");
 		console.log("Example: clawearn hyperliquid withdraw --amount 100");
+		process.exit(1);
+	}
+
+	const amount = Number(amountArg);
+	if (Number.isNaN(amount) || amount < MIN_DEPOSIT_USDC) {
+		console.error(`❌ Withdrawal amount must be at least ${MIN_DEPOSIT_USDC} USDC`);
+		console.error(`   You entered: ${amountArg}`);
 		process.exit(1);
 	}
 
