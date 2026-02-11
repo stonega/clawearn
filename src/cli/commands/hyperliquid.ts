@@ -672,9 +672,9 @@ async function handleWithdraw(args: string[]) {
 		console.log(`   Recipient: ${recipient}`);
 		console.log("\nProcessing withdrawal...");
 
-		const result = await client.withdraw({
+		const result = await client.withdraw3({
+			destination: recipient as `0x${string}`,
 			amount: amountArg,
-			address: recipient as `0x${string}`,
 		});
 
 		if (result.status === "ok") {
