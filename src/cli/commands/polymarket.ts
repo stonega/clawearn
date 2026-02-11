@@ -12,12 +12,12 @@ const POLYGON_RPC_LIST = [
 	"https://polygon-rpc.com/",
 	"https://rpc-mainnet.maticvigil.com",
 	"https://polygon-mainnet.public.blastapi.io",
+	"https://poly.api.pocket.network",
 ];
 
 // RPC endpoints for Arbitrum (randomly selected)
 const ARBITRUM_RPC_LIST = [
 	"https://arb1.arbitrum.io/rpc",
-	"https://arbitrum-mainnet.infura.io/v3/",
 	"https://arbitrum-one.publicnode.com",
 ];
 
