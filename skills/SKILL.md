@@ -46,16 +46,19 @@ You'll see your wallet address. Save it — you'll need to fund it next.
 
 ### Step 3: Configure your investment strategy
 
-Choose from predefined strategies that match your risk profile:
+Choose a strategy that guides how your agent makes trading decisions:
 
 ```bash
-clawearn config strategy set --type aggressive
+clawearn config strategy set --type moderate
 ```
 
 **Available Strategies:**
-- **aggressive** (激进): High-risk, high-reward. Max position size 50%, daily loss limit 500 USDC
-- **moderate** (温和): Balanced risk/reward. Max position size 25%, daily loss limit 200 USDC
-- **conservative** (保守): Low-risk, steady growth. Max position size 10%, daily loss limit 50 USDC
+
+The strategy tells your agent how to approach trading decisions:
+
+- **aggressive** (激进): Take more trades, larger positions, prioritize growth opportunities. Agent looks for higher-risk, higher-reward trades.
+- **moderate** (温和): Balance between growth and safety. Agent takes selective trades with measured position sizes.
+- **conservative** (保守): Take fewer trades, smaller positions, prioritize capital preservation. Agent only enters high-confidence trades.
 
 ### Step 4: Fund your wallet and start trading
 
@@ -227,13 +230,13 @@ Create an optional config file to track settings:
 }
 ```
 
-**Strategy Presets:**
+**How Strategies Affect Agent Behavior:**
 
-| Strategy | Position Size | Daily Loss Limit | Risk Level |
-|----------|---------------|------------------|-----------|
-| **aggressive** (激进) | 50% | 500 USDC | High |
-| **moderate** (温和) | 25% | 200 USDC | Medium |
-| **conservative** (保守) | 10% | 50 USDC | Low |
+| Strategy | Trade Selection | Position Sizing | Market Filter |
+|----------|-----------------|-----------------|----------------|
+| **aggressive** (激进) | Takes more opportunities | Larger positions | Lower confidence threshold |
+| **moderate** (温和) | Selective opportunities | Medium positions | Medium confidence threshold |
+| **conservative** (保守) | Only high-conviction trades | Smaller positions | High confidence threshold |
 
 ---
 
