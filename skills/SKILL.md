@@ -56,12 +56,6 @@ clawearn config strategy set --type aggressive
 - **aggressive** (激进): High-risk, high-reward. Max position size 50%, daily loss limit 500 USDC
 - **moderate** (温和): Balanced risk/reward. Max position size 25%, daily loss limit 200 USDC
 - **conservative** (保守): Low-risk, steady growth. Max position size 10%, daily loss limit 50 USDC
-- **custom**: Define your own parameters
-
-**Or customize:**
-```bash
-clawearn config strategy set --max-position-size 20 --daily-loss-limit 100
-```
 
 ### Step 4: Fund your wallet and start trading
 
