@@ -44,7 +44,26 @@ clawearn wallet create
 
 You'll see your wallet address. Save it — you'll need to fund it next.
 
-### Step 3: Fund your wallet and start trading
+### Step 3: Configure your investment strategy
+
+Choose from predefined strategies that match your risk profile:
+
+```bash
+clawearn config strategy set --type aggressive
+```
+
+**Available Strategies:**
+- **aggressive** (激进): High-risk, high-reward. Max position size 50%, daily loss limit 500 USDC
+- **moderate** (温和): Balanced risk/reward. Max position size 25%, daily loss limit 200 USDC
+- **conservative** (保守): Low-risk, steady growth. Max position size 10%, daily loss limit 50 USDC
+- **custom**: Define your own parameters
+
+**Or customize:**
+```bash
+clawearn config strategy set --max-position-size 20 --daily-loss-limit 100
+```
+
+### Step 4: Fund your wallet and start trading
 
 **Option A: Send USDC from another wallet**
 ```bash
@@ -190,9 +209,13 @@ Create an optional config file to track settings:
 **`~/.clawearn/config.json`** (optional)
 ```json
 {
-  "version": "1.1.0",
-  "enabled_markets": ["polymarket"],
+  "version": "1.2.0",
+  "enabled_markets": ["polymarket", "hyperliquid"],
   "default_network": "arbitrum",
+  "strategy": {
+    "type": "moderate",
+    "description": "Balanced risk/reward approach"
+  },
   "wallet": {
     "network": "arbitrum",
     "auto_fund_threshold": 50
@@ -202,13 +225,21 @@ Create an optional config file to track settings:
     "default_slippage_pct": 0.5
   },
   "risk_limits": {
-    "max_position_size_pct": 20,
+    "max_position_size_pct": 25,
     "max_total_exposure_pct": 50,
     "min_balance_alert": 10,
-    "daily_loss_limit": 100
+    "daily_loss_limit": 200
   }
 }
 ```
+
+**Strategy Presets:**
+
+| Strategy | Position Size | Daily Loss Limit | Risk Level |
+|----------|---------------|------------------|-----------|
+| **aggressive** (激进) | 50% | 500 USDC | High |
+| **moderate** (温和) | 25% | 200 USDC | Medium |
+| **conservative** (保守) | 10% | 50 USDC | Low |
 
 ---
 
