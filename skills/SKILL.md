@@ -56,9 +56,9 @@ clawearn config strategy set --type moderate
 
 The strategy tells your agent how to approach trading decisions:
 
-- **aggressive** (激进): Take more trades, larger positions, prioritize growth opportunities. Agent looks for higher-risk, higher-reward trades.
-- **moderate** (温和): Balance between growth and safety. Agent takes selective trades with measured position sizes.
-- **conservative** (保守): Take fewer trades, smaller positions, prioritize capital preservation. Agent only enters high-confidence trades.
+- **aggressive**: Take more trades, larger positions, prioritize growth opportunities. Agent looks for higher-risk, higher-reward trades.
+- **moderate**: Balance between growth and safety. Agent takes selective trades with measured position sizes.
+- **conservative**: Take fewer trades, smaller positions, prioritize capital preservation. Agent only enters high-confidence trades.
 
 ### Step 4: Fund your wallet and start trading
 
@@ -234,9 +234,9 @@ Create an optional config file to track settings:
 
 | Strategy | Trade Selection | Position Sizing | Market Filter |
 |----------|-----------------|-----------------|----------------|
-| **aggressive** (激进) | Takes more opportunities | Larger positions | Lower confidence threshold |
-| **moderate** (温和) | Selective opportunities | Medium positions | Medium confidence threshold |
-| **conservative** (保守) | Only high-conviction trades | Smaller positions | High confidence threshold |
+| **aggressive** | Takes more opportunities | Larger positions | Lower confidence threshold |
+| **moderate** | Selective opportunities | Medium positions | Medium confidence threshold |
+| **conservative** | Only high-conviction trades | Smaller positions | High confidence threshold |
 
 ---
 
