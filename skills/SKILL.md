@@ -1,7 +1,7 @@
 ---
 name: clawearn
-version: 1.1.0
-description: Modular prediction market trading platform for OpenClaw bots. Trade on Polymarket, manage wallets, transfer USDC, and automate trading strategies.
+version: 1.2.0
+description: Modular prediction market trading platform for OpenClaw bots. Trade on Polymarket and Hyperliquid, manage wallets, transfer USDC, and automate trading strategies.
 homepage: https://clawearn.xyz
 documentation: https://docs.clawearn.xyz
 repository: https://github.com/stonega/moltearn
@@ -62,6 +62,28 @@ clawearn polymarket market search --query "bitcoin price 2025"
 
 ---
 
+## Set Up Your Heartbeat 💓
+
+Keep your trading bot running smoothly with periodic checks.
+
+Add Clawearn to your agent's heartbeat routine so you don't forget to monitor positions and update market data.
+
+### Step 1: Add to your heartbeat file
+
+Add this to your `HEARTBEAT.md` (or equivalent periodic task list):
+
+```markdown
+## Clawearn Trading Checks (every 5 minutes)
+If 5 minutes since last Clawearn check:
+1. Check wallet balance: `clawearn polymarket balance check`
+2. Monitor open orders: `clawearn polymarket order list-open`
+3. Review active positions on Polymarket
+4. Update lastClawEarnCheck timestamp in memory
+5. Alert on critical thresholds (low balance, pending fills, etc.)
+```
+
+---
+
 ## Installation for OpenClaw Bots
 
 ### Install all skill files
@@ -83,6 +105,10 @@ curl -s https://clawearn.xyz/skills/core/security/SKILL.md > ~/.openclaw/skills/
 mkdir -p ~/.openclaw/skills/clawearn/markets/polymarket
 curl -s https://clawearn.xyz/skills/markets/polymarket/SKILL.md > ~/.openclaw/skills/clawearn/markets/polymarket/SKILL.md
 curl -s https://clawearn.xyz/skills/markets/polymarket/HEARTBEAT.md > ~/.openclaw/skills/clawearn/markets/polymarket/HEARTBEAT.md
+
+# Install market skills for futures
+mkdir -p ~/.openclaw/skills/clawearn/markets/hyperliquid
+curl -s https://clawearn.xyz/skills/markets/hyperliquid/SKILL.md > ~/.openclaw/skills/clawearn/markets/hyperliquid/SKILL.md
 ```
 
 ## Supported Markets
@@ -90,6 +116,7 @@ curl -s https://clawearn.xyz/skills/markets/polymarket/HEARTBEAT.md > ~/.opencla
 | Market | Status | Features | Installation |
 |--------|--------|----------|--------------|
 | **Polymarket** | ✅ Production | Full trading, order management, market discovery | See above |
+| **Hyperliquid** | ✅ Production | Perpetual futures trading, deposits, withdrawals, position management | See above |
 
 ---
 
@@ -129,6 +156,31 @@ clawearn polymarket order list-open
 
 # Cancel an order
 clawearn polymarket order cancel --order-id ORDER_ID
+```
+
+### Hyperliquid Perpetual Futures Trading
+
+```bash
+# List available coins
+clawearn hyperliquid market list
+
+# Check market price
+clawearn hyperliquid price --coin ETH
+
+# Check your balance and positions
+clawearn hyperliquid balance
+
+# Place a buy order
+clawearn hyperliquid order buy --coin ETH --price 3000 --size 0.1
+
+# View open orders
+clawearn hyperliquid order list-open
+
+# Deposit USDC to trading account
+clawearn hyperliquid deposit --amount 100
+
+# Withdraw USDC from trading account
+clawearn hyperliquid withdraw --amount 50
 ```
 
 ## Configuration
@@ -202,11 +254,26 @@ curl -s http://localhost:3000/skills/markets/NEW_MARKET/SKILL.md > ~/.clawearn/s
 
 ---
 
+## File Reference
+
+| File | URL |
+|------|-----|
+| **SKILL.md** (this file) | `https://clawearn.xyz/skills/SKILL.md` |
+| **HEARTBEAT.md** | `https://clawearn.xyz/skills/HEARTBEAT.md` |
+| **core/wallet/SKILL.md** | `https://clawearn.xyz/skills/core/wallet/SKILL.md` |
+| **core/security/SKILL.md** | `https://clawearn.xyz/skills/core/security/SKILL.md` |
+| **markets/polymarket/SKILL.md** | `https://clawearn.xyz/skills/markets/polymarket/SKILL.md` |
+| **markets/polymarket/HEARTBEAT.md** | `https://clawearn.xyz/skills/markets/polymarket/HEARTBEAT.md` |
+| **markets/hyperliquid/SKILL.md** | `https://clawearn.xyz/skills/markets/hyperliquid/SKILL.md` |
+
+---
+
 ## Getting Help
 
-- **Core wallet issues**: See `core/WALLET.md`
-- **Security questions**: See `core/SECURITY.md`
-- **Market-specific help**: See `markets/{market}/README.md`
+- **Core wallet issues**: See `core/wallet/SKILL.md`
+- **Security questions**: See `core/security/SKILL.md`
+- **Polymarket help**: See `markets/polymarket/SKILL.md`
+- **Hyperliquid help**: See `markets/hyperliquid/SKILL.md`
 - **General trading**: See `HEARTBEAT.md` for routine checks
 
 ---
